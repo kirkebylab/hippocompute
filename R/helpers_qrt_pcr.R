@@ -1,0 +1,167 @@
+
+load_reference <- function() {
+  # load h9 reference values
+  data_h9 <- read.csv("data/h9_reference_ct.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  hk_genes <- data_h9$gene[grepl("_org", data_h9$gene)] # use suffix "_org" to identify
+  
+  # extract h9 housekeeping genes and reference ct values
+  hkg_list <- list()
+  for (g in hk_genes) {
+    k <- gsub("_org", "", g) # remove "_org" suffix
+    v <- data_h9[data_h9$gene == g,]$ct # get ct value
+    data_h9[data_h9$gene == g,]$gene <- k # rename gene symbol in ref
+    hkg_list[[ k ]] <- v # store ct value
+  }
+  
+  # compute delta.ct for each housekeeping gene
+  delta_h9_list = list()
+  for (g in names(hkg_list)) {
+    data <- data.frame(data_h9) # copy dataframe
+    v <- hkg_list[[ g ]] # get housekeeping ct value
+    
+    data <- data %>%
+      mutate(ct=ct - v) %>%
+      group_by(gene) %>%
+      summarise(avg.delta.ct=mean(ct))
+    
+    delta_h9_list[[ g ]] <- data
+  }
+  
+  return(delta_h9_list)
+}
+
+process_plate <- function(in_file, col_names, row_names, reference_data) {
+  # in_file will be NULL initially. After the user selects
+  # and uploads a file, it will be a data frame with 'name',
+  # 'size', 'type', and 'datapath' columns. The 'datapath'
+  # column will contain the local filenames where the data can
+  # be found.
+  if (is.null(in_file))
+    return(NULL)
+  
+  # TODO: get header
+  # header <- read.table(in_file$datapath, nrows = 1, header = FALSE, stringsAsFactors = FALSE)
+  
+  tab <- read.csv(in_file$datapath, header=TRUE, sep='\t', skip=1)
+  tab <- dplyr::mutate(tab, Pos_x = substr(Pos, 2, 4), Pos_y = substr(Pos, 1,1))
+  tab <- tidyr::pivot_wider(tab[,c("Pos_y", "Pos_x", "Cp")], names_from=Pos_x, values_from=Cp)
+  tab <- as.data.frame(tab)
+  rownames(tab) <- tab[,"Pos_y"]
+  tab <- tab[-1] # drop Pos_y col
+  
+  # Replace 0's with 35
+  # Replace NA's with 35
+  # make notification, see: https://gallery.shinyapps.io/116-notifications/
+  # TODO: move notification?
+  mask_zeros <- (tab == 0.)
+  mask_nas <- is.na(tab)
+  
+  if (any(mask_zeros, na.rm=TRUE)) {
+    notification_warning_zeros <<- showNotification(
+      "WARNING: 0's detected in raw values. Replacing with 35.",
+      duration = 10, 
+      closeButton = FALSE,
+      type = "warning"
+    )
+  }
+  if (any(mask_nas)) {
+    notification_warning_nas <<- showNotification(
+      "WARNING: NA's detected in raw values. Replacing with 35.",
+      duration = 10,
+      closeButton = FALSE,
+      type = "warning"
+    )
+  }
+  
+  tab[mask_zeros | mask_nas] <- 35.
+  
+  # Get average per primer
+  # TODO: Make separate function to contain logic
+  col_labels <- unlist(strsplit(col_names, split="\n|\t| ")) # unlist cast to vector
+  row_labels <- unlist(strsplit(row_names, split="\n|\t| ")) # unlsit cast to vector
+  
+  # truncate table, i.e. remove rows/cols with no label
+  if (length(row_labels) < dim(tab)[1]) {
+    tab <- tab[1:length(row_labels),]
+  }
+  
+  if (length(col_labels) < dim(tab)[2]) {
+    tab <- tab[,1:length(col_labels)]
+  }
+  
+  # save raw ct values for qc
+  tab_raw_ct <- tab
+  rownames(tab_raw_ct) <- paste0(rownames(tab), '_', row_labels)
+  colnames(tab_raw_ct) <- paste0(colnames(tab), '_', col_labels)
+  
+  # infer which axis contains replicates labels for group by
+  if (any(duplicated(col_labels)) & !any(duplicated(row_labels))) {
+    # if replicates are in columns
+    # transpose tab, and add replicates as new col: "sample"
+    # R can only groupby based on column values - not column names
+    
+    tab <- as.data.frame(t(tab))
+    colnames(tab) <- row_labels # since tab is transposed, row_labs are now col_labs
+    tab <- cbind(tab, sample=col_labels)
+  } else if (any(duplicated(row_labels)) & !any(duplicated(col_labels))) {
+    colnames(tab) <- col_labels
+    tab <- cbind(tab, sample=row_labels)
+  } else {
+    # throw error
+    stop("Could not infer which axis contains replicate samples or primers. Please check that only one axis contains replicate labels.")
+  }
+  
+  # compute average Ct intensity per primer        
+  tab <- tab %>%
+    group_by(sample) %>% 
+    summarise(across(.fns=mean, na.rm=TRUE)) %>%
+    as.data.frame()
+  rownames(tab) <- tab[,"sample"]
+  tab <- tab[,-1] # drop sample col
+  
+  # check that primers are in cols and samples in rows
+  if (any(rownames(tab) %in% reference_data[[ 1 ]]$gene)) {
+    tab <- as.data.frame(t(tab)) # transpose table
+  }
+  
+  # compute deltas
+  # for each house-keeping primer in data: compute delta for all samples
+  # i.e. delta = sample1_primer1 - sample1_ACTB
+  # TODO: How to handle extra house-keeping, e.g. "ACTB_v2"
+  house_keeping_genes <- c("ACTB", "GAPDH") # TODO: Get these from somewhere else
+  power_acc <- NULL
+  for (g in house_keeping_genes) {
+    delta_sample <- data.frame(tab, check.names=FALSE) # check.names prevents R changing '-' to '.'
+    v <- delta_sample[,g] # get housekeeping gene ct vector
+    delta_sample <- delta_sample - v # subtract houskeeping across data
+    
+    # calculate power
+    # for each house-keeping primer in data: compute power in relation to h9 reference
+    # i.e. power = 2 ^ -(sample1_primer1avg_actbdelta - h9_primer1avg_actbdelta)
+    # N.B. no reference results in NA
+    delta_h9 <- reference_data[[ g ]]
+    delta_h9 <- data.frame(delta_h9[delta_h9$gene %in% colnames(delta_sample),])
+    rownames(delta_h9) <- delta_h9$gene
+    delta_h9 <- delta_h9[colnames(delta_sample),] # get h9 avg ct vals in correct order
+    diff <- sweep(delta_sample, 2, delta_h9$avg.delta.ct, '-') # subtract h9 avg.delta.ct from each row
+    power <- 2 ** -diff
+    
+    if (is.null(power_acc)) {
+      power_acc <- power
+    } else {
+      power_acc <- power_acc + power
+    }
+  }
+  
+  # calculate mean_power
+  # i.e. mean_power = avg(sample1_primer1_actbpower, sample1_primer1_gapdhpower)
+  mean_power <- power_acc / length(house_keeping_genes)
+  
+  # return results in list
+  results <- list()
+  results[[ "data_processed "]] <- mean_power
+  results[[ "data_raw_ct" ]] <- tab_raw_ct
+  results[[ "mask_zeros" ]] <- mask_zeros
+  results[[ "mask_nas" ]] <- mask_nas
+  return(results)
+}
