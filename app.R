@@ -1,9 +1,5 @@
 # Load packages ----
 library(shiny)
-library(DT)
-library(dplyr)
-library(tidyr)
-library(rclipboard)
 
 # Source helper functions ----
 # All *.R files in the R/ subdir are automatically sourced

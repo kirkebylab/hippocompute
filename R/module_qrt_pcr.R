@@ -1,5 +1,7 @@
 # Load packages ----
-# loaded in app.R to avoid reloading packages
+library(DT)
+library(dplyr)
+library(tidyr)
 
 # Source helper functions ----
 # source("helpers_qrt_pcr.R") # automatically sourced
@@ -21,7 +23,6 @@ tabQrtpcrUI <- function(id, label = "qrt-pcr") {
        fileInput(ns("data_file"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
        actionButton(ns("button_add_table"), "Add table"),
        actionButton(ns("button_clear_input"), "Clear"),
-       uiOutput(ns("clip"), inline=TRUE),
      ),
      
      
@@ -73,24 +74,18 @@ tabQrtpcrServer <- function(id) {
           row_names=input$row_labels, 
           reference_data=delta_h9_list)
       })
-      
-      # how to use renderui in a module:
-      # https://gist.github.com/tbadams45/38f1f56e0f2d7ced3507ef11b0a2fdce
-      output$clip <- renderUI({
-        # this creates the content of the actual button
-        rclipButton(session$ns("clipbtn"), "Copy result", "placeholder", icon("clipboard"))
-      })
-      observeEvent(input$clipbtn, {
-        clipr::write_clip(as.data.frame(plate_processed()$data_processed))
-      }) # needed for clip to work
-      
-      
+
       # Output tables
       output$plate_processed <- DT::renderDataTable({ 
         df <- plate_processed()$data_processed
         df <- datatable(
           data = df,
-          options = list(pageLength=25)
+          extensions = c("Buttons"),
+          options = list(
+            dom = 'Bfrtip',
+            pageLength=25,
+            buttons = c('copy', 'csv', 'excel')
+            )
         ) %>%
           formatRound(1:ncol(df), 2)
         
@@ -111,10 +106,13 @@ tabQrtpcrServer <- function(id) {
         # https://stackoverflow.com/questions/50798941/r-shiny-rendertable-change-cell-colors
         # https://stackoverflow.com/questions/42569302/format-color-of-shiny-datatable-dt-according-to-values-in-a-different-dataset
         df <- datatable(
-          data = cbind(df,mask), 
+          data = cbind(df,mask),
+          extensions = c("Buttons"),
           options=list(
+            dom = 'Bfrtip',
             pageLength = 25,
-            columnDefs = list(list(visible=FALSE, targets=c((1+ncol(df)):(ncol(df)+ncol(mask)))))
+            columnDefs = list(list(visible=FALSE, targets=c((1+ncol(df)):(ncol(df)+ncol(mask))))),
+            buttons = c('copy', 'csv', 'excel')
           ),
           selection = "single"
         ) %>%
