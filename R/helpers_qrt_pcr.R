@@ -53,6 +53,19 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   rownames(tab) <- tab[,"Pos_y"]
   tab <- tab[-1] # drop Pos_y col
   
+  # TODO: Make separate function to contain logic
+  col_labels <- unlist(strsplit(col_names, split="\n|\t| ")) # unlist cast to vector
+  row_labels <- unlist(strsplit(row_names, split="\n|\t| ")) # unlsit cast to vector
+  
+  # truncate table, i.e. remove rows/cols with no label
+  if (length(row_labels) < dim(tab)[1]) {
+    tab <- tab[1:length(row_labels),]
+  }
+  
+  if (length(col_labels) < dim(tab)[2]) {
+    tab <- tab[,1:length(col_labels)]
+  }
+  
   # Replace 0's with 35
   # Replace NA's with 35
   # make notification, see: https://gallery.shinyapps.io/116-notifications/
@@ -78,20 +91,6 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   }
   
   tab[mask_zeros | mask_nas] <- 35.
-  
-  # Get average per primer
-  # TODO: Make separate function to contain logic
-  col_labels <- unlist(strsplit(col_names, split="\n|\t| ")) # unlist cast to vector
-  row_labels <- unlist(strsplit(row_names, split="\n|\t| ")) # unlsit cast to vector
-  
-  # truncate table, i.e. remove rows/cols with no label
-  if (length(row_labels) < dim(tab)[1]) {
-    tab <- tab[1:length(row_labels),]
-  }
-  
-  if (length(col_labels) < dim(tab)[2]) {
-    tab <- tab[,1:length(col_labels)]
-  }
   
   # save raw ct values for qc
   tab_raw_ct <- tab
