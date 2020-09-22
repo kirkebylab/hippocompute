@@ -1,0 +1,10 @@
+Package: Hippocompute
+Title: Toolkit For Analysis Of Experimental Data
+Version: 0.1.0
+Authors@R: c(
+    person("Tobias", "Overlund Stannius", email = "stannius@sund.ku.dk", role=c("cre", "aut")),
+    person("Gaurav", "Singh Rathore", email = "gsr@sund.ku.dk")
+  )
+Description: TBA.
+Depends: R (>= 3.6.0)
+License: GPL-3
