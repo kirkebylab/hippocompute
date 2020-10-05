@@ -1,5 +1,6 @@
 # Load packages ----
 library(shiny)
+# N.B. Remember to add dependencies in the DESCRIPTION file
 
 # Source helper functions ----
 # All *.R files in the R/ subdir are automatically sourced

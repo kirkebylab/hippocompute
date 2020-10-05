@@ -72,6 +72,7 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   # TODO: move notification?
   mask_zeros <- (tab == 0.)
   mask_nas <- is.na(tab)
+  # mask_differences is computed later.
   
   if (any(mask_zeros, na.rm=TRUE)) {
     notification_warning_zeros <<- showNotification(
@@ -114,7 +115,26 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
     stop("Could not infer which axis contains replicate samples or primers. Please check that only one axis contains replicate labels.")
   }
   
-  # compute average Ct intensity per primer        
+  # compute standard deviation per replicate
+  mask_std <- tab %>%
+   dplyr::group_by(sample) %>%
+   dplyr::transmute(dplyr::across(.fns=sd, na.rm=TRUE)) %>%
+   as.data.frame()
+
+  mask_std <- mask_std[,-1] # drop sample col
+  mask_std <- (mask_std > 2.) # TODO: change hard coded threshold. Ask AK.
+  
+  if (any(mask_std)) { # TODO: place this better
+   notification_warning_std <<- showNotification(
+     "WARNING: Some replicates have a high standard deviation.",
+     duration = 10,
+     closeButton = FALSE,
+     type = "warning"
+   )
+  }
+  
+  
+  # compute average Ct intensity per replicate        
   tab <- tab %>%
     group_by(sample) %>% 
     summarise(across(.fns=mean, na.rm=TRUE)) %>%
@@ -166,5 +186,6 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   results[[ "data_raw_ct" ]] <- tab_raw_ct
   results[[ "mask_zeros" ]] <- mask_zeros
   results[[ "mask_nas" ]] <- mask_nas
+  results[[ "mask_std" ]] <- mask_std
   return(results)
 }

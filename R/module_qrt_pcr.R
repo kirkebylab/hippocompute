@@ -9,6 +9,7 @@ library(tidyr)
 # Setup ----
 delta_h9_list <- load_reference() # from helpers_qrt_pcr.R
 
+# UI logic ----
 tabQrtpcrUI <- function(id, label = "qrt-pcr") {
   # `NS(id)` returns a namespace function, which we save as `ns` and will
   # invoke later.
@@ -21,7 +22,7 @@ tabQrtpcrUI <- function(id, label = "qrt-pcr") {
        textInput(ns("col_labels"), label = "Column labels", value = "", placeholder = "Paste column labels ..."),
        textInput(ns("row_labels"), label = "Row labels", value = "", placeholder = "Paste row labels ..."),
        fileInput(ns("data_file"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
-       actionButton(ns("button_add_table"), "Add table"),
+       actionButton(ns("button_calculate"), "Calculate"),
        actionButton(ns("button_clear_input"), "Clear"),
      ),
      
@@ -29,19 +30,20 @@ tabQrtpcrUI <- function(id, label = "qrt-pcr") {
      # output
      mainPanel(
        tabsetPanel(
-         tabPanel("Processed Ct values", dataTableOutput(ns("plate_processed"))),
-         tabPanel("Raw Ct values", dataTableOutput(ns("plate_raw"))),
-         tabPanel("Debug",
-            p("These boxes reflect the input values and may be used for troubleshooting."),
+         tabPanel("Fold Change", br(), dataTableOutput(ns("plate_processed"))),
+         tabPanel("Ct", br(), dataTableOutput(ns("plate_raw"))),
+         tabPanel("Reference", br(), dataTableOutput(ns("reference"))),
+         tabPanel("Log",
             # show / hide this area
             # https://stackoverflow.com/questions/44790028/show-hide-entire-box-element-in-r-shiny
             # https://stackoverflow.com/questions/51333133/using-shinyjs-to-hide-show-ui-elements
-            column(4,h3("Column labels")),
-            column(4,h3("Row labels")),
-            column(4,h3("File input")),
-            column(4, verbatimTextOutput(ns("col_labels"))),
-            column(4, verbatimTextOutput(ns("row_labels"))),
-            column(4, verbatimTextOutput(ns("data_file"))),
+            br(),
+            h3("Column labels"),
+            verbatimTextOutput(ns("col_labels")),
+            h3("Row labels"),
+            verbatimTextOutput(ns("row_labels")),
+            h3("File input"),
+            verbatimTextOutput(ns("data_file"))
          )
        ),
      )
@@ -49,12 +51,14 @@ tabQrtpcrUI <- function(id, label = "qrt-pcr") {
   )
 }
 
+# Server logic ----
 tabQrtpcrServer <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
       notification_warning_nas <- NULL
       notification_warning_zeros <- NULL
+      notification_warning_std <- NULL
       
       # Reactive events
       observeEvent(input$button_clear_input, {
@@ -62,7 +66,7 @@ tabQrtpcrServer <- function(id) {
         updateTextInput(session, "row_labels", value = "")
       })
       
-      plate_processed <- eventReactive(input$button_add_table, {
+      plate_processed <- eventReactive(input$button_calculate, {
         validate(
           need(input$data_file, label="File input"),
           need(input$col_labels != '', label="Column labels"),
@@ -84,7 +88,10 @@ tabQrtpcrServer <- function(id) {
           options = list(
             dom = 'Bfrtip',
             pageLength=25,
-            buttons = c('copy', 'csv', 'excel')
+            buttons = list('copy',
+                           'csv',
+                           list(extend = 'excel', filename="hippocompute_qpcr_fc", title = NULL),
+                           'colvis')
             )
         ) %>%
           formatRound(1:ncol(df), 2)
@@ -98,7 +105,9 @@ tabQrtpcrServer <- function(id) {
         
         mask_zeros <- result$mask_zeros
         mask_nas <- result$mask_nas
+        mask_std <- result$mask_std
         mask <- matrix(0L, nrow = dim(df)[1], ncol = dim(df)[2])
+        mask[mask_std] <- 1
         mask[mask_zeros] <- 1
         mask[mask_nas] <- 2
         
@@ -112,19 +121,46 @@ tabQrtpcrServer <- function(id) {
             dom = 'Bfrtip',
             pageLength = 25,
             columnDefs = list(list(visible=FALSE, targets=c((1+ncol(df)):(ncol(df)+ncol(mask))))),
-            buttons = c('copy', 'csv', 'excel')
+            buttons = list('copy',
+                           'csv',
+                           list(extend = 'excel', filename="hippocompute_qpcr_ct", title = NULL),
+                           'colvis')
           ),
           selection = "single"
         ) %>%
           formatStyle(
             1:ncol(df),
             valueColumns=(1+ncol(df)):(ncol(df)+ncol(mask)),
-            backgroundColor=styleEqual(c(1,2), c("khaki", "lightcoral"))
+            backgroundColor=styleEqual(c(1,2,3), c("khaki", "lightsalmon", "lightcoral"))
           ) %>%
           formatRound(1:ncol(df), 2)
         
         df })
       
+      # Reference table
+      output$reference <- DT::renderDataTable({
+        df1 <- delta_h9_list[1]
+        df2 <- delta_h9_list[2]
+        df_comb <- merge(df1, df2, by.x=1, by.y=1)
+        row.names(df_comb) <- df_comb[,1] # use gene names as index
+        df_comb[,1] <- NULL
+        
+        df <- datatable(
+          data=df_comb,
+          extensions=c("Buttons"),
+          options=list(
+            dom = 'Bfrtip',
+            pageLength = 25,
+            buttons = list('copy',
+                        'csv',
+                        list(extend = 'excel', filename="hippocompute_qpcr_reference", title = NULL),
+                        'colvis')
+            )
+          ) %>%
+          formatRound(1:ncol(df_comb), 2) # from 2 to avoid overwriting gene col
+        
+        df
+      })
       
       # Debug info -- render input as text
       output$col_labels <- renderPrint({
