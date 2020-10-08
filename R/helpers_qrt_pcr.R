@@ -57,13 +57,14 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   col_labels <- unlist(strsplit(col_names, split="\n|\t| ")) # unlist cast to vector
   row_labels <- unlist(strsplit(row_names, split="\n|\t| ")) # unlsit cast to vector
   
-  # truncate table, i.e. remove rows/cols with no label
+  # fill up with "empty" labels, if necessary
   if (length(row_labels) < dim(tab)[1]) {
-    tab <- tab[1:length(row_labels),]
+    diff <- dim(tab)[1] - length(row_labels)
+    row_labels <- c(row_labels, replicate(diff, "empty"))
   }
-  
   if (length(col_labels) < dim(tab)[2]) {
-    tab <- tab[,1:length(col_labels)]
+    diff <- dim(tab)[2] - length(col_labels)
+    row_labels <- c(col_labels, replicate(diff, "empty"))
   }
   
   # Replace 0's with 35
