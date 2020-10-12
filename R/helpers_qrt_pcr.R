@@ -5,7 +5,7 @@ library(tidyr)
 
 load_reference <- function() {
   # load h9 reference values
-  data_h9 <- read.csv("data/h9_reference_ct.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  data_h9 <- read.csv("data/h9_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   hk_genes <- data_h9$gene[grepl("_org", data_h9$gene)] # use suffix "_org" to identify
   
   # extract h9 housekeeping genes and reference ct values
