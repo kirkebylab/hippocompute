@@ -3,24 +3,24 @@ library(dplyr)
 library(tidyr)
 
 
-load_reference <- function() {
+load_dataset <- function(file) {
   # load h9 reference values
-  data_h9 <- read.csv("data/h9_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
-  hk_genes <- data_h9$gene[grepl("_org", data_h9$gene)] # use suffix "_org" to identify
+  delta_raw <- read.csv(file, header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  hk_genes <- delta_raw$gene[grepl("_org", delta_raw$gene)] # use suffix "_org" to identify
   
   # extract h9 housekeeping genes and reference ct values
   hkg_list <- list()
   for (g in hk_genes) {
     k <- gsub("_org", "", g) # remove "_org" suffix
-    v <- data_h9[data_h9$gene == g,]$ct # get ct value
-    data_h9[data_h9$gene == g,]$gene <- k # rename gene symbol in ref
+    v <- delta_raw[delta_raw$gene == g,]$ct # get ct value
+    delta_raw[delta_raw$gene == g,]$gene <- k # rename gene symbol in ref
     hkg_list[[ k ]] <- v # store ct value
   }
   
   # compute delta.ct for each housekeeping gene
-  delta_h9_list = list()
+  delta_list = list()
   for (g in names(hkg_list)) {
-    data <- data.frame(data_h9) # copy dataframe
+    data <- data.frame(delta_raw) # copy dataframe
     v <- hkg_list[[ g ]] # get housekeeping ct value
     
     data <- data %>%
@@ -28,10 +28,18 @@ load_reference <- function() {
       group_by(gene) %>%
       summarise(avg.delta.ct=mean(ct))
     
-    delta_h9_list[[ g ]] <- data
+    delta_list[[ g ]] <- data
   }
   
-  return(delta_h9_list)
+  return(delta_list)
+}
+
+load_all_reference_data <- function() {
+  # return results in list
+  results <- list()
+  results[[ "h9_v0" ]] <- load_dataset("data/h9_v0.tsv")
+  results[[ "rc17_v0" ]] <- load_dataset("data/rc17_v0.tsv")
+  return(results)
 }
 
 process_plate <- function(in_file, col_names, row_names, reference_data) {
@@ -56,6 +64,14 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   # TODO: Make separate function to contain logic
   col_labels <- unlist(strsplit(col_names, split="\n|\t| ")) # unlist cast to vector
   row_labels <- unlist(strsplit(row_names, split="\n|\t| ")) # unlsit cast to vector
+  
+  # stop if too many labels
+  if (length(row_labels) > dim(tab)[1]) {
+    stop()
+  }
+  if (length(row_labels) > dim(tab)[2]) {
+    stop()
+  }
   
   # fill up with "empty" labels, if necessary
   if (length(row_labels) < dim(tab)[1]) {

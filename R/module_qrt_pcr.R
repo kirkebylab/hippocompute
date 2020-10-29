@@ -7,21 +7,26 @@ library(tidyr)
 # source("helpers_qrt_pcr.R") # automatically sourced
 
 # Setup ----
-delta_h9_list <- load_reference() # from helpers_qrt_pcr.R
+# delta_h9_list <- load_reference() # from helpers_qrt_pcr.R
+data_reference <- load_all_reference_data() # from helpers_qrt_pcr.R
 
 # UI logic ----
-tabQrtpcrUI <- function(id, label = "qrt-pcr") {
+tabQrtpcrUI <- function(id, label = "qpcr") {
   # `NS(id)` returns a namespace function, which we save as `ns` and will
   # invoke later.
   ns <- NS(id)
   
-  tabPanel("qRT-PCR",
+  tabPanel("QPCR",
     sidebarLayout(
      # input
      sidebarPanel(
        textInput(ns("col_labels"), label = "Column labels", value = "", placeholder = "Paste column labels ..."),
        textInput(ns("row_labels"), label = "Row labels", value = "", placeholder = "Paste row labels ..."),
        fileInput(ns("data_file"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
+       selectInput(ns("reference_dataset"), "Reference",
+                   c("H9 v0 (2018)" = "h9_v0"
+                     # "RC v0 (2020)" = "rc17_v0"
+                     )),
        actionButton(ns("button_calculate"), "Calculate"),
        actionButton(ns("button_clear_input"), "Clear"),
      ),
@@ -60,6 +65,7 @@ tabQrtpcrServer <- function(id) {
       notification_warning_zeros <- NULL
       notification_warning_std <- NULL
       
+      
       # Reactive events
       observeEvent(input$button_clear_input, {
         updateTextInput(session, "col_labels", value = "")
@@ -70,13 +76,15 @@ tabQrtpcrServer <- function(id) {
         validate(
           need(input$data_file, label="File input"),
           need(input$col_labels != '', label="Column labels"),
-          need(input$row_labels != '', label="Row labels")
+          need(input$row_labels != '', label="Row labels"),
+          need(length(unlist(strsplit(input$col_labels, split="\n|\t| "))) > 24, "Too many column labels provided. Max: 24"), # unlist cast to vector
+          need(length(unlist(strsplit(input$row_labels, split="\n|\t| "))) > 16, "Too many row labels provided. Max: 16") # unlsit cast to vector))
         )
         process_plate(
           in_file=input$data_file, 
           col_names=input$col_labels, 
           row_names=input$row_labels, 
-          reference_data=delta_h9_list)
+          reference_data=data_reference[[input$reference_dataset]])
       })
 
       # Output tables
@@ -139,8 +147,9 @@ tabQrtpcrServer <- function(id) {
       
       # Reference table
       output$reference <- DT::renderDataTable({
-        df1 <- delta_h9_list[1]
-        df2 <- delta_h9_list[2]
+        df_org <- data_reference[[input$reference_dataset]] # load the selected ref dataset via key
+        df1 <- df_org[1] # col for hk gene ACTB
+        df2 <- df_org[2] # col for hk gene GAPDH
         df_comb <- merge(df1, df2, by.x=1, by.y=1)
         row.names(df_comb) <- df_comb[,1] # use gene names as index
         df_comb[,1] <- NULL
