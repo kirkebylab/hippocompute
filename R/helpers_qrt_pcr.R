@@ -152,6 +152,8 @@ process_plate <- function(in_file, col_names, row_names, reference_data, house_k
   
   
   # compute average Ct intensity per replicate
+  sample_order <- unique(tab$sample) # preserve input row order
+  tab$sample <- factor(tab$sample, levels = sample_order)
   tab <- tab %>%
     group_by(sample) %>% 
     summarise(across(.fns=mean, na.rm=TRUE)) %>%
