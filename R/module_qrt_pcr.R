@@ -9,6 +9,7 @@ library(tidyr)
 # Setup ----
 # delta_h9_list <- load_reference() # from helpers_qrt_pcr.R
 data_reference <- load_all_reference_data() # from helpers_qrt_pcr.R
+hk_genes_default <- c("ACTB", "GAPDH")
 
 # UI logic ----
 tabQrtpcrUI <- function(id, label = "qpcr") {
@@ -23,7 +24,12 @@ tabQrtpcrUI <- function(id, label = "qpcr") {
        textInput(ns("col_labels"), label = "Column labels", value = "", placeholder = "Paste column labels ..."),
        textInput(ns("row_labels"), label = "Row labels", value = "", placeholder = "Paste row labels ..."),
        fileInput(ns("data_file"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
-       selectInput(ns("reference_dataset"), "Reference",
+       selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
+                      # selected = c("ACTB", "GAPDH"), # handled by server
+                      choices = NULL, # handled by server
+                      multiple = TRUE,
+                      options = list(placeholder = "Select houskeeping genes")),
+       selectInput(ns("reference_dataset"), "Reference dataset",
                    c("H9 v0 (2018)" = "h9_v0"
                      # "RC v0 (2020)" = "rc17_v0"
                      )),
@@ -61,31 +67,83 @@ tabQrtpcrServer <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
+      # -- Notifications -------------------------------------------------------
       notification_warning_nas <- NULL
       notification_warning_zeros <- NULL
       notification_warning_std <- NULL
-      
-      
-      # Reactive events
+
+
+
+      # -- Reactive events -----------------------------------------------------
+      # Reactive values object for storing all reactive values
+      values <- reactiveValues()
+
+      # Housekeeping genes
+      # Whenever new hk genes are chosen, update pre-computed hk delta.ct
+      # debounce to reduce update freq TODO: adjust this sometime
+      genes_housekeeping <- reactive(input$genes_housekeeping)
+      genes_housekeeping_d <- genes_housekeeping %>% debounce(2000) 
+      observeEvent(genes_housekeeping_d(), {
+            # TODO: handle case where none are selected
+            # update selected hk genes
+            values$hk_genes_selected <- genes_housekeeping_d()
+
+            # update pre-computed delta ct
+            values$data_reference_delta_ct <- process_reference_data(values$data_reference_raw,
+                                                                     values$hk_genes_selected)
+      })
+
+      # Reference dataset
+      # Whenever new reference dataset is chosen, update the reactive values,
+      # i.e. available hk genes to select, raw ref data and pre-computed hk delta.ct
+      observeEvent(input$reference_dataset, {
+          # update chosen ref dataset
+          values$data_reference_raw <- data_reference[[input$reference_dataset]]
+
+          # update pre-computed hk delta.ct
+          values$data_reference_delta_ct <- process_reference_data(values$data_reference_raw,
+                                                                   values$hk_genes_selected)
+
+          # get options for which hk genes can be selected from new ref data
+          hk_genes <- sort(data_reference[[input$reference_dataset]]$gene)
+
+          # update reactiveValues
+          values$hk_genes_selected <- hk_genes_default # Default hk genes
+
+          # update input field
+          updateSelectizeInput(session, "genes_housekeeping",
+                               selected = values$hk_genes_selected, # Set default
+                               choices = hk_genes,
+                               server = TRUE)
+      })
+
+      # Clear button
       observeEvent(input$button_clear_input, {
         updateTextInput(session, "col_labels", value = "")
         updateTextInput(session, "row_labels", value = "")
       })
-      
+
+      # Calculate button
       plate_processed <- eventReactive(input$button_calculate, {
+        # check args, before calling func
         validate(
           need(input$data_file, label="File input"),
           need(input$col_labels != '', label="Column labels"),
           need(input$row_labels != '', label="Row labels"),
-          need(length(unlist(strsplit(input$col_labels, split="\n|\t| "))) > 24, "Too many column labels provided. Max: 24"), # unlist cast to vector
-          need(length(unlist(strsplit(input$row_labels, split="\n|\t| "))) > 16, "Too many row labels provided. Max: 16") # unlsit cast to vector))
+          need(length(unlist(strsplit(input$col_labels, split="\n|\t| "))) <= 24, "Too many column labels provided. Max: 24"), # unlist cast to vector
+          need(length(unlist(strsplit(input$row_labels, split="\n|\t| "))) <= 16, "Too many row labels provided. Max: 16") # unlsit cast to vector
         )
+        # call func
         process_plate(
-          in_file=input$data_file, 
-          col_names=input$col_labels, 
-          row_names=input$row_labels, 
-          reference_data=data_reference[[input$reference_dataset]])
+          in_file=input$data_file,
+          col_names=input$col_labels,
+          row_names=input$row_labels,
+          reference_data=values$data_reference_delta_ct)
       })
+
+
+
+      # -- Output --------------------------------------------------------------
 
       # Output tables
       output$plate_processed <- DT::renderDataTable({ 
@@ -147,15 +205,10 @@ tabQrtpcrServer <- function(id) {
       
       # Reference table
       output$reference <- DT::renderDataTable({
-        df_org <- data_reference[[input$reference_dataset]] # load the selected ref dataset via key
-        df1 <- df_org[1] # col for hk gene ACTB
-        df2 <- df_org[2] # col for hk gene GAPDH
-        df_comb <- merge(df1, df2, by.x=1, by.y=1)
-        row.names(df_comb) <- df_comb[,1] # use gene names as index
-        df_comb[,1] <- NULL
+        df_org <- values$data_reference_raw
         
         df <- datatable(
-          data=df_comb,
+          data=df_org,
           extensions=c("Buttons"),
           options=list(
             dom = 'Bfrtip',
@@ -165,8 +218,8 @@ tabQrtpcrServer <- function(id) {
                         list(extend = 'excel', filename="hippocompute_qpcr_reference", title = NULL),
                         'colvis')
             )
-          ) %>%
-          formatRound(1:ncol(df_comb), 2) # from 2 to avoid overwriting gene col
+          ) # %>%
+          # formatRound(1:ncol(df_org), 2) # from 2 to avoid overwriting gene col
         
         df
       })

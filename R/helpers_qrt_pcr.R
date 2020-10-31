@@ -3,46 +3,46 @@ library(dplyr)
 library(tidyr)
 
 
-load_dataset <- function(file) {
-  # load h9 reference values
-  delta_raw <- read.csv(file, header=TRUE, sep='\t', stringsAsFactors=FALSE)
-  hk_genes <- delta_raw$gene[grepl("_org", delta_raw$gene)] # use suffix "_org" to identify
-  
-  # extract h9 housekeeping genes and reference ct values
-  hkg_list <- list()
-  for (g in hk_genes) {
-    k <- gsub("_org", "", g) # remove "_org" suffix
-    v <- delta_raw[delta_raw$gene == g,]$ct # get ct value
-    delta_raw[delta_raw$gene == g,]$gene <- k # rename gene symbol in ref
-    hkg_list[[ k ]] <- v # store ct value
-  }
-  
-  # compute delta.ct for each housekeeping gene
-  delta_list = list()
-  for (g in names(hkg_list)) {
-    data <- data.frame(delta_raw) # copy dataframe
-    v <- hkg_list[[ g ]] # get housekeeping ct value
-    
-    data <- data %>%
-      mutate(ct=ct - v) %>%
-      group_by(gene) %>%
-      summarise(avg.delta.ct=mean(ct))
-    
-    delta_list[[ g ]] <- data
-  }
-  
-  return(delta_list)
-}
 
 load_all_reference_data <- function() {
   # return results in list
-  results <- list()
-  results[[ "h9_v0" ]] <- load_dataset("data/h9_v0.tsv")
-  results[[ "rc17_v0" ]] <- load_dataset("data/rc17_v0.tsv")
-  return(results)
+  dsets <- list()
+  dsets[[ "h9_v0" ]] <- read.csv("data/h9_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  dsets[[ "rc17_v0" ]] <- read.csv("data/rc17_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  return(dsets)
 }
 
-process_plate <- function(in_file, col_names, row_names, reference_data) {
+
+process_reference_data <- function(data_raw, hk_genes) {
+    # load h9 reference values
+    
+    # extract h9 housekeeping genes and reference ct values
+    hkg_list <- list()
+    for (g in hk_genes) {
+        # TODO: investigate any side-effect, i.e. is the right hk gene chosen first?
+        v <- data_raw[data_raw$gene == g,]$ct[1] # get first ct value as ref
+        hkg_list[[ g ]] <- v # store ct value
+    }
+    
+    # compute delta.ct for each housekeeping gene
+    delta_list = list()
+    for (g in names(hkg_list)) {
+        data <- data.frame(data_raw) # copy dataframe
+        v <- hkg_list[[ g ]] # get housekeeping ct value
+        
+        data <- data %>%
+            mutate(ct=ct - v) %>%
+            group_by(gene) %>%
+            summarise(avg.delta.ct=mean(ct))
+        
+        delta_list[[ g ]] <- data
+    }
+    
+    return(delta_list)
+}
+
+
+process_plate <- function(in_file, col_names, row_names, reference_data, house_keeping_genes) {
   # in_file will be NULL initially. After the user selects
   # and uploads a file, it will be a data frame with 'name',
   # 'size', 'type', and 'datapath' columns. The 'datapath'
@@ -151,7 +151,7 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   }
   
   
-  # compute average Ct intensity per replicate        
+  # compute average Ct intensity per replicate
   tab <- tab %>%
     group_by(sample) %>% 
     summarise(across(.fns=mean, na.rm=TRUE)) %>%
@@ -167,8 +167,8 @@ process_plate <- function(in_file, col_names, row_names, reference_data) {
   # compute deltas
   # for each house-keeping primer in data: compute delta for all samples
   # i.e. delta = sample1_primer1 - sample1_ACTB
-  # TODO: How to handle extra house-keeping, e.g. "ACTB_v2"
-  house_keeping_genes <- c("ACTB", "GAPDH") # TODO: Get these from somewhere else
+  house_keeping_genes <- names(reference_data) # get names from list of df's
+
   power_acc <- NULL
   for (g in house_keeping_genes) {
     delta_sample <- data.frame(tab, check.names=FALSE) # check.names prevents R changing '-' to '.'
