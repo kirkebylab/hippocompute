@@ -8,6 +8,7 @@ load_all_reference_data <- function() {
   # return results in list
   dsets <- list()
   dsets[[ "h9_v0" ]] <- read.csv("data/h9_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  dsets[[ "h9_v1" ]] <- read.csv("data/h9_v1.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   dsets[[ "rc17_v0" ]] <- read.csv("data/rc17_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   return(dsets)
 }

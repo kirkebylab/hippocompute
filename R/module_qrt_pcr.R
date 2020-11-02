@@ -30,9 +30,11 @@ tabQrtpcrUI <- function(id, label = "qpcr") {
                       multiple = TRUE,
                       options = list(placeholder = "Select houskeeping genes")),
        selectInput(ns("reference_dataset"), "Reference dataset",
-                   c("H9 v0 (2018)" = "h9_v0"
+                   c("H9 v0 (2018)" = "h9_v0",
+                     "H9 v1 (2020)" = "h9_v1"
                      # "RC v0 (2020)" = "rc17_v0"
-                     )),
+                     ),
+                   selected="h9_v1"),
        actionButton(ns("button_calculate"), "Calculate"),
        actionButton(ns("button_clear_input"), "Clear"),
      ),
