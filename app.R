@@ -9,13 +9,15 @@ library(shiny)
 # delta_h9_list <- load_reference()
 
 # User interface ----
-ui <- navbarPage("Hippocompute",
+ui <- navbarPage(htmlOutput("title"),
     # load submodules
     tabQrtpcrUI("qrtpcr")
 )
 
 # Server logic ----
 server <- function(input, output, session) {
+    output$title <- renderText("Hippocompute<sup>BETA</sup>")
+  
     # load submodules
     tabQrtpcrServer("qrtpcr")
 }
