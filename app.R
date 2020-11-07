@@ -11,7 +11,10 @@ library(shiny)
 # User interface ----
 ui <- navbarPage(htmlOutput("title"),
     # load submodules
-    tabQrtpcrUI("qrtpcr")
+    tabQrtpcrUI("qrtpcr"),
+    
+    # other parameters
+    theme = "bootstrap.css"
 )
 
 # Server logic ----
