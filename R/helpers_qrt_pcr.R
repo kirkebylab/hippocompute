@@ -3,6 +3,11 @@ library(dplyr)
 library(tidyr)
 
 
+ceiling_to_multiple <- function(number, multiple) {
+    # ceil number to nearest multiple
+    return((floor(number / multiple) * multiple) + multiple)
+}
+
 
 load_all_reference_data <- function() {
   # return results in list
@@ -209,3 +214,5 @@ process_plate <- function(in_file, col_names, row_names, reference_data, house_k
   results[[ "mask_std" ]] <- mask_std
   return(results)
 }
+
+

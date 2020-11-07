@@ -22,8 +22,11 @@ tabQrtpcrUI <- function(id, label = "qpcr") {
      # input
      sidebarPanel(
        textInput(ns("col_labels"), label = "Column labels", value = "", placeholder = "Paste column labels ..."),
+       span(h6(textOutput(ns("col_label_count"))), style="color:gray"),
        textInput(ns("row_labels"), label = "Row labels", value = "", placeholder = "Paste row labels ..."),
-       fileInput(ns("data_file"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
+       span(h6(textOutput(ns("row_label_count"))), style="color:gray"),
+       fileInput(ns("files"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
+       span(h6(textOutput(ns("file_count"))), style="color:gray"),
        selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
                       # selected = c("ACTB", "GAPDH"), # handled by server
                       choices = NULL, # handled by server
@@ -56,7 +59,7 @@ tabQrtpcrUI <- function(id, label = "qpcr") {
             h3("Row labels"),
             verbatimTextOutput(ns("row_labels")),
             h3("File input"),
-            verbatimTextOutput(ns("data_file"))
+            verbatimTextOutput(ns("files"))
          )
        ),
      )
@@ -76,9 +79,19 @@ tabQrtpcrServer <- function(id) {
 
 
 
-      # -- Reactive events -----------------------------------------------------
+      # -- Reactive events and values ------------------------------------------
       # Reactive values object for storing all reactive values
       values <- reactiveValues()
+
+      # Column labels - split into vector and store in values
+      observeEvent(input$col_labels, {
+          values$col_labels <- unlist(strsplit(input$col_labels, split="\\s+")) # unlist cast to vector
+      })
+
+      # Row labels - split into vector and store in values
+      observeEvent(input$row_labels, {
+          values$row_labels <- unlist(strsplit(input$row_labels, split="\\s+")) # unlist cast to vector
+      })
 
       # Housekeeping genes
       # Whenever new hk genes are chosen, update pre-computed hk delta.ct
@@ -129,15 +142,15 @@ tabQrtpcrServer <- function(id) {
       plate_processed <- eventReactive(input$button_calculate, {
         # check args, before calling func
         validate(
-          need(input$data_file, label="File input"),
+          need(input$files, label="File input"),
           need(input$col_labels != '', label="Column labels"),
           need(input$row_labels != '', label="Row labels"),
-          need(length(unlist(strsplit(input$col_labels, split="\n|\t| "))) <= 24, "Too many column labels provided. Max: 24"), # unlist cast to vector
-          need(length(unlist(strsplit(input$row_labels, split="\n|\t| "))) <= 16, "Too many row labels provided. Max: 16") # unlsit cast to vector
+          need((length(values$col_labels) %% 24) == 0, "Number of column labels must be a multiple of 24"),
+          need((length(values$row_labels) %% 16) == 0, "Number of row labels must be a multiple of 16")
         )
         # call func
         process_plate(
-          in_file=input$data_file,
+          in_file=input$files,
           col_names=input$col_labels,
           row_names=input$row_labels,
           reference_data=values$data_reference_delta_ct)
@@ -147,6 +160,37 @@ tabQrtpcrServer <- function(id) {
 
       # -- Output --------------------------------------------------------------
 
+      # Number of col labels vs expected
+      # for columns we expect a multiple of 24
+      output$col_label_count <- renderText({
+          count <- length(values$col_labels)
+          expected <- ceiling_to_multiple(count-1, 24)
+          return(paste0(count, "/", expected, " labels"))
+
+      })
+
+      # Number of row labels vs expected
+      # for rows we expect a multiple of 16
+      output$row_label_count <- renderText({
+          count <- length(values$row_labels)
+          expected <- ceiling_to_multiple(count-1, 16)
+          return(paste0(count, "/", expected, " labels"))
+      })
+
+      # Number of files vs expected
+      # for files (equivalent to 1 plate) we infer the expected number from the
+      # number of rows and cols
+      output$file_count <- renderText({
+          count_files <- length(input$files$name) # count number of file names
+          count_cols <- length(values$col_labels)
+          count_rows <- length(values$row_labels)
+          expected_x <- ceiling_to_multiple(count_cols-1, 24)
+          expected_y <- ceiling_to_multiple(count_rows-1, 16)
+          # n plates fit in x-axis * n plates fit in y-axis
+          expected <- (expected_x / 24) * (expected_y / 16)
+          return(paste0(count_files, "/", expected, " files"))
+      })
+      
       # Output tables
       output$plate_processed <- DT::renderDataTable({ 
         df <- plate_processed()$data_processed
@@ -228,16 +272,16 @@ tabQrtpcrServer <- function(id) {
       
       # Debug info -- render input as text
       output$col_labels <- renderPrint({
-        col_labels <- strsplit(input$col_labels, split="\n|\t| ")
+        col_labels <- strsplit(input$col_labels, split="\\s+")
         return(col_labels)
       })
       
       output$row_labels <- renderPrint({
-        row_labels <- strsplit(input$row_labels, split="\n|\t| ")
+        row_labels <- strsplit(input$row_labels, split="\\s+")
         return(row_labels)
       })
       
-      output$data_file <- renderPrint({ str(input$data_file) })
+      output$files <- renderPrint({ str(input$files) })
     }
   )
 }
