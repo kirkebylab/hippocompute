@@ -220,8 +220,8 @@ serverQPCR <- function(id) {
         mask_std <- result$mask_std
         mask <- matrix(0L, nrow = dim(df)[1], ncol = dim(df)[2])
         mask[mask_std] <- 1
-        mask[mask_zeros] <- 1
-        mask[mask_nas] <- 2
+        mask[mask_zeros] <- 2
+        mask[mask_nas] <- 3
         
         # set table cell color according to replacement, see:
         # https://stackoverflow.com/questions/50798941/r-shiny-rendertable-change-cell-colors
