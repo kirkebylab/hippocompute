@@ -10,8 +10,8 @@ library(shiny)
 
 # User interface ----
 ui <- navbarPage(htmlOutput("title"),
-    # load submodules
-    tabQrtpcrUI("qrtpcr"),
+    # load tabs
+    uiQPCR("qpcr"),
     
     # other parameters
     theme = "bootstrap.css"
@@ -21,8 +21,8 @@ ui <- navbarPage(htmlOutput("title"),
 server <- function(input, output, session) {
     output$title <- renderText("Hippocompute<sup>BETA</sup>")
   
-    # load submodules
-    tabQrtpcrServer("qrtpcr")
+    # load tabs
+    serverQPCR("qpcr")
 }
 
 # Run app ----

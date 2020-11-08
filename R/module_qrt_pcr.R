@@ -12,7 +12,7 @@ data_reference <- load_all_reference_data() # from helpers_qrt_pcr.R
 hk_genes_default <- c("ACTB", "GAPDH")
 
 # UI logic ----
-tabQrtpcrUI <- function(id, label = "qpcr") {
+uiQPCR <- function(id, label = "qpcr") {
   # `NS(id)` returns a namespace function, which we save as `ns` and will
   # invoke later.
   ns <- NS(id)
@@ -68,7 +68,7 @@ tabQrtpcrUI <- function(id, label = "qpcr") {
 }
 
 # Server logic ----
-tabQrtpcrServer <- function(id) {
+serverQPCR <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
