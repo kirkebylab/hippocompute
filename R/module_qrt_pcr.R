@@ -25,7 +25,7 @@ uiQPCR <- function(id, label = "qpcr") {
        span(h6(textOutput(ns("col_label_count"))), style="color:gray"),
        textInput(ns("row_labels"), label = "Row labels", value = "", placeholder = "Paste row labels ..."),
        span(h6(textOutput(ns("row_label_count"))), style="color:gray"),
-       fileInput(ns("files"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
+       fileInput(ns("files"), label = "File input", multiple=TRUE, placeholder = "No file selected"),
        span(h6(textOutput(ns("file_count"))), style="color:gray"),
        hr(),
        selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
@@ -47,7 +47,7 @@ uiQPCR <- function(id, label = "qpcr") {
      # output
      mainPanel(
        tabsetPanel(
-         tabPanel("Fold Change", br(), dataTableOutput(ns("plate_processed"))),
+         tabPanel("Fold Change", br(), dataTableOutput(ns("plate_fold_change"))),
          tabPanel("Ct", br(), uiOutput(ns("plates"))),
          tabPanel("Reference", br(), dataTableOutput(ns("reference"))),
          tabPanel("Log",
@@ -68,6 +68,7 @@ uiQPCR <- function(id, label = "qpcr") {
   )
 }
 
+
 # Server logic ----
 serverQPCR <- function(id) {
   moduleServer(
@@ -79,12 +80,6 @@ serverQPCR <- function(id) {
       notification_warning_zeros <- NULL
       notification_warning_std <- NULL
 
-      output$moreControls <- renderUI({
-          tagList(
-              sliderInput("n", "N", 1, 1000, 500),
-              textInput("label", "Label")
-          )
-      })
 
       # -- Reactive events and values ------------------------------------------
       # Reactive values object for storing all reactive values
@@ -158,61 +153,39 @@ serverQPCR <- function(id) {
           need((length(values$col_labels) %% 24) == 0, "Number of column labels must be a multiple of 24"),
           need((length(values$row_labels) %% 16) == 0, "Number of row labels must be a multiple of 16")
         )
-        # call func
-        values$plates <- process_plates(
-          files=input$files,
-          col_names=input$col_labels,
-          row_names=input$row_labels,
-          reference_data=values$data_reference_delta_ct)
 
-        # TODO: make separate function
-        plates <- values$plates$plates # does this make a copy?
-        tag_list <- c()
-        dt_list <- list()
-        for (i in 1:length(plates)) {
-            name_obj <- paste0("plate_", i)
-            tag_list <- c(tag_list, ns(name_obj))
-            p <- plates[[i]]
+        # call funcs
+        tryCatch({
+            values$plates <- process_plates(
+              files=input$files,
+              col_names=input$col_labels,
+              row_names=input$row_labels,
+              reference_data=values$data_reference_delta_ct)},
+            warning = function(warn){showNotification(paste0(warn),
+                                                      duration=0,
+                                                      cluseButton=TRUE,
+                                                      type="warning")},
+            error = function(err){showNotification(paste0(err),
+                                                    duration=0,
+                                                    closeButton=TRUE,
+                                                    type="err")}
+        )
 
-            df <- p$df
-            mask <- matrix(0L, nrow = dim(df)[1], ncol = dim(df)[2])
-            mask[p$mask_std] <- 1
-            mask[p$mask_zeros] <- 2
-            mask[p$mask_nas] <- 3
-
-            # set table cell color according to replacement, see:
-            # https://stackoverflow.com/questions/50798941/r-shiny-rendertable-change-cell-colors
-            # https://stackoverflow.com/questions/42569302/format-color-of-shiny-datatable-dt-according-to-values-in-a-different-dataset
-            df <- datatable(
-              data = cbind(df,mask),
-              caption = p$name,
-              extensions = c("Buttons"),
-              options=list(
-                dom = 'Bfrtip',
-                pageLength = 25,
-                columnDefs = list(list(visible=FALSE, targets=c((1+ncol(df)):(ncol(df)+ncol(mask))))),
-                buttons = list('copy',
-                              'csv',
-                              list(extend = 'excel', filename="hippocompute_qpcr_ct", title = NULL),
-                              'colvis')
-              ),
-              selection = "single"
-            ) %>%
-              formatStyle(
-                1:ncol(df),
-                valueColumns=(1+ncol(df)):(ncol(df)+ncol(mask)),
-                backgroundColor=styleEqual(c(1,2,3), c("khaki", "lightsalmon", "lightcoral"))
-              ) %>%
-              formatRound(1:ncol(df), 2)
-
-            dt_list[[name_obj]] <- df
-        }
-        values$dt_list <- dt_list
-
+        tryCatch({
+            values$dt_list <- make_datatables_ct(values$plates$raw)},
+            warning = function(warn){showNotification(paste0(warn),
+                                                      duration=0,
+                                                      cluseButton=TRUE,
+                                                      type="warning")},
+            error = function(err){showNotification(paste0(err),
+                                                    duration=0,
+                                                    closeButton=TRUE,
+                                                    type="err")}
+        )
       })
 
 
-      # -- Output --------------------------------------------------------------
+      # -- Rendered Output -----------------------------------------------------
 
       # Number of col labels vs expected
       # for columns we expect a multiple of 24
@@ -220,7 +193,6 @@ serverQPCR <- function(id) {
           count <- length(values$col_labels)
           expected <- ceiling_to_multiple(count-1, 24)
           return(paste0(count, "/", expected, " labels"))
-
       })
 
       # Number of row labels vs expected
@@ -245,10 +217,10 @@ serverQPCR <- function(id) {
           return(paste0(count_files, "/", expected, " files"))
       })
       
-      # Output tables
-      output$plate_processed <- DT::renderDataTable({ 
+      # Tab - Fold change
+      output$plate_fold_change <- DT::renderDataTable({ 
         if (is.null(values$plates)) return()
-        df <- values$plates$data_processed
+        df <- values$plates$fold_change
 
         df <- datatable(
           data = df,
@@ -266,19 +238,21 @@ serverQPCR <- function(id) {
         
         df })
 
-      # Ct / QC tab plates
+
+      # Tab - Ct / QC tab plates
       output$plates <- renderUI({
         if (is.null(values$dt_list)) return()
+        # datatables are calculated elsewhere to enable dynamic rendering of
+        # multiple datatables
         func <- function(x) { renderDataTable(x) }
         lapply(names(values$dt_list), function(n){ func(values$dt_list[[n]]) })
-
       })
 
- 
-      # Reference table
+
+      # Tab Reference table
       output$reference <- DT::renderDataTable({
         df_org <- values$data_reference_raw
-        
+
         df <- datatable(
           data=df_org,
           extensions=c("Buttons"),
@@ -292,10 +266,10 @@ serverQPCR <- function(id) {
             )
           ) %>%
           formatRound(columns=2, digits=2)
-        
         df
       })
-      
+
+
       # Debug info -- render input as text
       output$col_labels <- renderPrint({
         col_labels <- strsplit(input$col_labels, split="\\s+")
@@ -311,3 +285,4 @@ serverQPCR <- function(id) {
     }
   )
 }
+
