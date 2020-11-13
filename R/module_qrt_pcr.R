@@ -27,6 +27,7 @@ uiQPCR <- function(id, label = "qpcr") {
        span(h6(textOutput(ns("row_label_count"))), style="color:gray"),
        fileInput(ns("files"), label = "File input", multiple=FALSE, placeholder = "No file selected"),
        span(h6(textOutput(ns("file_count"))), style="color:gray"),
+       hr(),
        selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
                       # selected = c("ACTB", "GAPDH"), # handled by server
                       choices = NULL, # handled by server
@@ -38,8 +39,8 @@ uiQPCR <- function(id, label = "qpcr") {
                      # "RC v0 (2020)" = "rc17_v0"
                      ),
                    selected="h9_v1"),
-       actionButton(ns("button_calculate"), "Calculate"),
-       actionButton(ns("button_clear_input"), "Clear"),
+       div(actionButton(ns("button_calculate"), "Calculate", style="align:center")),
+       # actionButton(ns("button_clear_input"), "Clear"),
      ),
      
      
@@ -47,7 +48,7 @@ uiQPCR <- function(id, label = "qpcr") {
      mainPanel(
        tabsetPanel(
          tabPanel("Fold Change", br(), dataTableOutput(ns("plate_processed"))),
-         tabPanel("Ct", br(), dataTableOutput(ns("plate_raw"))),
+         tabPanel("Ct", br(), uiOutput(ns("plates"))),
          tabPanel("Reference", br(), dataTableOutput(ns("reference"))),
          tabPanel("Log",
             # show / hide this area
@@ -72,16 +73,24 @@ serverQPCR <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
+      ns <- session$ns # session is needed for renderUI to work
       # -- Notifications -------------------------------------------------------
       notification_warning_nas <- NULL
       notification_warning_zeros <- NULL
       notification_warning_std <- NULL
 
-
+      output$moreControls <- renderUI({
+          tagList(
+              sliderInput("n", "N", 1, 1000, 500),
+              textInput("label", "Label")
+          )
+      })
 
       # -- Reactive events and values ------------------------------------------
       # Reactive values object for storing all reactive values
       values <- reactiveValues()
+
+      values$plates <- NULL # initialize plates to NULL
 
       # Column labels - split into vector and store in values
       observeEvent(input$col_labels, {
@@ -139,8 +148,9 @@ serverQPCR <- function(id) {
       })
 
       # Calculate button
-      plate_processed <- eventReactive(input$button_calculate, {
+      observeEvent(input$button_calculate, {
         # check args, before calling func
+        # TODO: fix validate -- messages are not showing
         validate(
           need(input$files, label="File input"),
           need(input$col_labels != '', label="Column labels"),
@@ -149,13 +159,57 @@ serverQPCR <- function(id) {
           need((length(values$row_labels) %% 16) == 0, "Number of row labels must be a multiple of 16")
         )
         # call func
-        process_plate(
-          in_file=input$files,
+        values$plates <- process_plates(
+          files=input$files,
           col_names=input$col_labels,
           row_names=input$row_labels,
           reference_data=values$data_reference_delta_ct)
-      })
 
+        # TODO: make separate function
+        plates <- values$plates$plates # does this make a copy?
+        tag_list <- c()
+        dt_list <- list()
+        for (i in 1:length(plates)) {
+            name_obj <- paste0("plate_", i)
+            tag_list <- c(tag_list, ns(name_obj))
+            p <- plates[[i]]
+
+            df <- p$df
+            mask <- matrix(0L, nrow = dim(df)[1], ncol = dim(df)[2])
+            mask[p$mask_std] <- 1
+            mask[p$mask_zeros] <- 2
+            mask[p$mask_nas] <- 3
+
+            # set table cell color according to replacement, see:
+            # https://stackoverflow.com/questions/50798941/r-shiny-rendertable-change-cell-colors
+            # https://stackoverflow.com/questions/42569302/format-color-of-shiny-datatable-dt-according-to-values-in-a-different-dataset
+            df <- datatable(
+              data = cbind(df,mask),
+              caption = p$name,
+              extensions = c("Buttons"),
+              options=list(
+                dom = 'Bfrtip',
+                pageLength = 25,
+                columnDefs = list(list(visible=FALSE, targets=c((1+ncol(df)):(ncol(df)+ncol(mask))))),
+                buttons = list('copy',
+                              'csv',
+                              list(extend = 'excel', filename="hippocompute_qpcr_ct", title = NULL),
+                              'colvis')
+              ),
+              selection = "single"
+            ) %>%
+              formatStyle(
+                1:ncol(df),
+                valueColumns=(1+ncol(df)):(ncol(df)+ncol(mask)),
+                backgroundColor=styleEqual(c(1,2,3), c("khaki", "lightsalmon", "lightcoral"))
+              ) %>%
+              formatRound(1:ncol(df), 2)
+
+            dt_list[[name_obj]] <- df
+        }
+        values$dt_list <- dt_list
+
+      })
 
 
       # -- Output --------------------------------------------------------------
@@ -193,7 +247,9 @@ serverQPCR <- function(id) {
       
       # Output tables
       output$plate_processed <- DT::renderDataTable({ 
-        df <- plate_processed()$data_processed
+        if (is.null(values$plates)) return()
+        df <- values$plates$data_processed
+
         df <- datatable(
           data = df,
           extensions = c("Buttons"),
@@ -209,46 +265,16 @@ serverQPCR <- function(id) {
           formatRound(1:ncol(df), 2)
         
         df })
-      
-      output$plate_raw <- DT::renderDataTable({ 
-        result <- plate_processed()
-        
-        df <- result$data_raw_ct
-        
-        mask_zeros <- result$mask_zeros
-        mask_nas <- result$mask_nas
-        mask_std <- result$mask_std
-        mask <- matrix(0L, nrow = dim(df)[1], ncol = dim(df)[2])
-        mask[mask_std] <- 1
-        mask[mask_zeros] <- 2
-        mask[mask_nas] <- 3
-        
-        # set table cell color according to replacement, see:
-        # https://stackoverflow.com/questions/50798941/r-shiny-rendertable-change-cell-colors
-        # https://stackoverflow.com/questions/42569302/format-color-of-shiny-datatable-dt-according-to-values-in-a-different-dataset
-        df <- datatable(
-          data = cbind(df,mask),
-          extensions = c("Buttons"),
-          options=list(
-            dom = 'Bfrtip',
-            pageLength = 25,
-            columnDefs = list(list(visible=FALSE, targets=c((1+ncol(df)):(ncol(df)+ncol(mask))))),
-            buttons = list('copy',
-                           'csv',
-                           list(extend = 'excel', filename="hippocompute_qpcr_ct", title = NULL),
-                           'colvis')
-          ),
-          selection = "single"
-        ) %>%
-          formatStyle(
-            1:ncol(df),
-            valueColumns=(1+ncol(df)):(ncol(df)+ncol(mask)),
-            backgroundColor=styleEqual(c(1,2,3), c("khaki", "lightsalmon", "lightcoral"))
-          ) %>%
-          formatRound(1:ncol(df), 2)
-        
-        df })
-      
+
+      # Ct / QC tab plates
+      output$plates <- renderUI({
+        if (is.null(values$dt_list)) return()
+        func <- function(x) { renderDataTable(x) }
+        lapply(names(values$dt_list), function(n){ func(values$dt_list[[n]]) })
+
+      })
+
+ 
       # Reference table
       output$reference <- DT::renderDataTable({
         df_org <- values$data_reference_raw
@@ -264,8 +290,8 @@ serverQPCR <- function(id) {
                         list(extend = 'excel', filename="hippocompute_qpcr_reference", title = NULL),
                         'colvis')
             )
-          ) # %>%
-          # formatRound(1:ncol(df_org), 2) # from 2 to avoid overwriting gene col
+          ) %>%
+          formatRound(columns=2, digits=2)
         
         df
       })

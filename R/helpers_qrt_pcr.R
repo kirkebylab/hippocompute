@@ -39,7 +39,7 @@ process_reference_data <- function(data_raw, hk_genes) {
         data <- data %>%
             mutate(ct=ct - v) %>%
             group_by(gene) %>%
-            summarise(avg.delta.ct=mean(ct))
+            summarise(avg.delta.ct=mean(ct), .groups="drop")
         
         delta_list[[ g ]] <- data
     }
@@ -48,130 +48,112 @@ process_reference_data <- function(data_raw, hk_genes) {
 }
 
 
-process_plate <- function(in_file, col_names, row_names, reference_data, house_keeping_genes) {
-  # in_file will be NULL initially. After the user selects
+read_file <- function(name, file, col_labels, row_labels, replicates_in_cols=NULL) {
+  # file input will be NULL initially. After the user selects
   # and uploads a file, it will be a data frame with 'name',
   # 'size', 'type', and 'datapath' columns. The 'datapath'
   # column will contain the local filenames where the data can
   # be found.
-  if (is.null(in_file))
-    return(NULL)
-  
-  # TODO: get header
-  # header <- read.table(in_file$datapath, nrows = 1, header = FALSE, stringsAsFactors = FALSE)
-  
-  tab <- read.csv(in_file$datapath, header=TRUE, sep='\t', skip=1)
-  tab <- dplyr::mutate(tab, Pos_x = substr(Pos, 2, 4), Pos_y = substr(Pos, 1,1))
-  tab <- tidyr::pivot_wider(tab[,c("Pos_y", "Pos_x", "Cp")], names_from=Pos_x, values_from=Cp)
-  tab <- as.data.frame(tab)
-  rownames(tab) <- tab[,"Pos_y"]
-  tab <- tab[-1] # drop Pos_y col
-  
-  # TODO: Make separate function to contain logic
-  col_labels <- unlist(strsplit(col_names, split="\n|\t| ")) # unlist cast to vector
-  row_labels <- unlist(strsplit(row_names, split="\n|\t| ")) # unlsit cast to vector
-  
-  # stop if too many labels
-  if (length(row_labels) > dim(tab)[1]) {
+
+  # stop if wrong number of labels
+  if (length(col_labels) != 24) {
     stop()
   }
-  if (length(row_labels) > dim(tab)[2]) {
+  if (length(row_labels) != 16) {
     stop()
   }
-  
-  # fill up with "empty" labels, if necessary
-  if (length(row_labels) < dim(tab)[1]) {
-    diff <- dim(tab)[1] - length(row_labels)
-    row_labels <- c(row_labels, replicate(diff, "empty"))
+  # infer which axis contains replicate labels, if not specified
+  if (is.null(replicates_in_cols)) {
+    replicates_in_cols <- any(duplicated(col_labels))
   }
-  if (length(col_labels) < dim(tab)[2]) {
-    diff <- dim(tab)[2] - length(col_labels)
-    row_labels <- c(col_labels, replicate(diff, "empty"))
-  }
-  
+
+  # read txt file, but skip header. TODO: get later for metadata
+  df <- read.csv(file, header=TRUE, sep='\t', skip=1)
+
+  # extract plate coordinates and pivot dataframe
+  df <- dplyr::mutate(df, Pos_x = substr(Pos, 2, 4), Pos_y = substr(Pos, 1,1))
+  df <- tidyr::pivot_wider(df[,c("Pos_y", "Pos_x", "Cp")], names_from=Pos_x, values_from=Cp)
+  df <- as.data.frame(df)
+  rownames(df) <- df[,"Pos_y"]
+  df <- df[-1] # drop Pos_y col
+
   # Replace 0's with 35
   # Replace NA's with 35
-  # make notification, see: https://gallery.shinyapps.io/116-notifications/
-  # TODO: move notification?
-  mask_zeros <- (tab == 0.)
-  mask_nas <- is.na(tab)
-  # mask_differences is computed later.
-  
-  if (any(mask_zeros, na.rm=TRUE)) {
-    notification_warning_zeros <<- showNotification(
-      "WARNING: 0's detected in raw values. Replacing with 35.",
-      duration = 10, 
-      closeButton = FALSE,
-      type = "warning"
-    )
-  }
-  if (any(mask_nas)) {
-    notification_warning_nas <<- showNotification(
-      "WARNING: NA's detected in raw values. Replacing with 35.",
-      duration = 10,
-      closeButton = FALSE,
-      type = "warning"
-    )
-  }
-  
-  tab[mask_zeros | mask_nas] <- 35.
+  mask_zeros <- (df == 0.)
+  mask_nas <- is.na(df)
+
+  df[mask_zeros | mask_nas] <- 35.
   
   # save raw ct values for qc
-  tab_raw_ct <- tab
-  rownames(tab_raw_ct) <- paste0(rownames(tab), '_', row_labels)
-  colnames(tab_raw_ct) <- paste0(colnames(tab), '_', col_labels)
+  df_raw <- df
+  rownames(df_raw) <- paste0(rownames(df), '_', row_labels)
+  colnames(df_raw) <- paste0(colnames(df), '_', col_labels)
+
   
-  # infer which axis contains replicates labels for group by
-  if (any(duplicated(col_labels)) & !any(duplicated(row_labels))) {
+  if (replicates_in_cols) {
     # if replicates are in columns
-    # transpose tab, and add replicates as new col: "sample"
+    # transpose df, and add replicates as new col: "sample"
     # R can only groupby based on column values - not column names
-    
-    tab <- as.data.frame(t(tab))
-    colnames(tab) <- row_labels # since tab is transposed, row_labs are now col_labs
-    tab <- cbind(tab, sample=col_labels)
-  } else if (any(duplicated(row_labels)) & !any(duplicated(col_labels))) {
-    colnames(tab) <- col_labels
-    tab <- cbind(tab, sample=row_labels)
+    df <- as.data.frame(t(df))
+    # colnames(df) <- row_labels # since df is transposed, row_labs are now col_labs
+    df <- cbind(df, sample=col_labels) # add sample column with labels for group by
   } else {
-    # throw error
-    stop("Could not infer which axis contains replicate samples or primers. Please check that only one axis contains replicate labels.")
+    # colnames(df) <- col_labels # add col_labels
+    df <- cbind(df, sample=row_labels)
   }
   
   # compute standard deviation per replicate
-  mask_std <- tab %>%
+  mask_std <- df %>%
    dplyr::group_by(sample) %>%
    dplyr::transmute(dplyr::across(.fns=sd, na.rm=TRUE)) %>%
    as.data.frame()
 
   mask_std <- mask_std[,-1] # drop sample col
-  mask_std <- (mask_std > 2.) # TODO: change hard coded threshold. Ask AK.
   
-  if (any(mask_std)) { # TODO: place this better
-   notification_warning_std <<- showNotification(
-     "WARNING: Some replicates have a high standard deviation.",
-     duration = 10,
-     closeButton = FALSE,
-     type = "warning"
-   )
+  # transpose to shape 24x16 if necessary
+  if (replicates_in_cols) {
+    mask_std <- t(mask_std)
   }
   
-  
+  # For 2 samples. a SD of .3 is equivalent to a difference from the mean of .5,
+  # which works with 2 samples, but not 3
+  # TODO: calculate threshold depending on number of replicates. Discuss with AK.
+  mask_std <- (mask_std > .5)
+
+  # return results in list
+  results <- list()
+  results[[ "name" ]] <- name
+  results[[ "df" ]] <- df_raw
+  results[[ "mask_zeros" ]] <- mask_zeros
+  results[[ "mask_nas" ]] <- mask_nas
+  results[[ "mask_std" ]] <- mask_std
+  return(results)
+}
+
+
+calculate_fold_change <- function(df, reference_data) {
+  # it should cbind or rbind the plates, depending on inferred shape
+  # then add col_labels and row_labels
+  # add replicate_name (sample) column
+  # do the computation as usual
+
+  # ensure colnames are unique
+  if (any(duplicated(colnames(df)))) {
+      colnames(df) <- make.unique(colnames(df), sep='.')
+  }
+
   # compute average Ct intensity per replicate
-  sample_order <- unique(tab$sample) # preserve input row order
-  tab$sample <- factor(tab$sample, levels = sample_order)
-  tab <- tab %>%
+  df <- df %>%
     group_by(sample) %>% 
-    summarise(across(.fns=mean, na.rm=TRUE)) %>%
+    summarise(across(.fns=mean, na.rm=TRUE), .groups="drop") %>%
     as.data.frame()
-  rownames(tab) <- tab[,"sample"]
-  tab <- tab[,-1] # drop sample col
-  
+  rownames(df) <- df[,"sample"]
+  df <- df[,-1] # drop sample col
   # check that primers are in cols and samples in rows
-  if (any(rownames(tab) %in% reference_data[[ 1 ]]$gene)) {
-    tab <- as.data.frame(t(tab)) # transpose table
+  if (any(rownames(df) %in% reference_data[[ 1 ]]$gene)) {
+    df <- as.data.frame(t(df)) # transpose table
   }
-  
+
   # compute deltas
   # for each house-keeping primer in data: compute delta for all samples
   # i.e. delta = sample1_primer1 - sample1_ACTB
@@ -179,7 +161,7 @@ process_plate <- function(in_file, col_names, row_names, reference_data, house_k
 
   power_acc <- NULL
   for (g in house_keeping_genes) {
-    delta_sample <- data.frame(tab, check.names=FALSE) # check.names prevents R changing '-' to '.'
+    delta_sample <- data.frame(df, check.names=FALSE) # check.names prevents R changing '-' to '.'
     v <- delta_sample[,g] # get housekeeping gene ct vector
     delta_sample <- delta_sample - v # subtract houskeeping across data
     
@@ -205,13 +187,91 @@ process_plate <- function(in_file, col_names, row_names, reference_data, house_k
   # i.e. mean_power = avg(sample1_primer1_actbpower, sample1_primer1_gapdhpower)
   mean_power <- power_acc / length(house_keeping_genes)
   
+  return(mean_power)
+}
+
+
+process_plates <- function(files, col_names, row_names, reference_data, replicates_in_cols=NULL) {
+  # files will be NULL initially. After the user selects
+  # and uploads a file, it will be a data frame with 'name',
+  # 'size', 'type', and 'datapath' columns. The 'datapath'
+  # column will contain the local filenames where the data can
+  # be found.
+
+  # -- check input ------------------------------------------------------------
+  if (is.null(files))
+    return(NULL)
+  
+  col_labels <- unlist(strsplit(col_names, split="\\s+")) # unlist cast to vector
+  row_labels <- unlist(strsplit(row_names, split="\\s+")) # unlsit cast to vector
+
+  # infer which axis contains replicate labels, if not specified
+  if (is.null(replicates_in_cols)) {
+    replicates_in_cols <- any(duplicated(col_labels))
+  }
+
+  # check number of labels
+  if ((length(col_labels) %% 24) != 0) {
+    stop("Number of column labels is not a multiple of 24.")
+  }
+  if ((length(row_labels) %% 16) != 0) {
+    stop("Number of column labels is not a multiple of 16.")
+  }
+  
+  
+  # -- read files and compute qc -----------------------------------------------
+
+  # iterate over files and process them
+  n_plates_x <- as.integer(length(col_labels) / 24)
+  n_plates_y <- as.integer(length(row_labels) / 16)
+  plates <- list()
+  df_row <- list()
+  for (i in 1:n_plates_y) {
+      ix <- (i-1)*16
+      plate_rows <- row_labels[(ix+1):(ix+16)]
+      df_col <- list()
+      for (j in 1:n_plates_x) {
+          jx <- (j-1)*24
+          plate_cols <- col_labels[(jx+1):(jx+24)]
+          px <- i+j-1
+          plates[[px]] <- read_file(files$name[px], files$datapath[px], plate_cols, plate_rows, replicates_in_cols)
+
+          df <- plates[[px]]$df
+          if (replicates_in_cols) {
+              df <- as.data.frame(t(df))
+              colnames(df) <- plate_rows
+          } else {
+              colnames(df) <- plate_cols
+          }
+
+          df_col[[j]] <- df
+      }
+      df_row[[i]] <- do.call(cbind, df_col)
+  }
+
+  df <- do.call(rbind, df_row)
+
+  # transpose df if needed
+  if (replicates_in_cols) {
+    # transpose df, and add replicates as new col: "sample"
+    # R can only groupby based on column values - not column names
+    df <- cbind(df, sample=col_labels) # add sample column with labels for group by
+  } else {
+    df <- cbind(df, sample=row_labels)
+  }
+
+  # preserve input row order
+  sample_order <- unique(df$sample)
+  df$sample <- factor(df$sample, levels = sample_order)
+
+
+  # -- compute fold change ----------------------------------------------------
+  df_foldchange <- calculate_fold_change(df, reference_data)
+
   # return results in list
   results <- list()
-  results[[ "data_processed "]] <- mean_power
-  results[[ "data_raw_ct" ]] <- tab_raw_ct
-  results[[ "mask_zeros" ]] <- mask_zeros
-  results[[ "mask_nas" ]] <- mask_nas
-  results[[ "mask_std" ]] <- mask_std
+  results[[ "data_processed" ]] <- df_foldchange
+  results[[ "plates" ]] <- plates
   return(results)
 }
 
