@@ -45,11 +45,14 @@ uiQPCR <- function(id, label = "qpcr") {
                       multiple = TRUE,
                       options = list(placeholder = "Select houskeeping genes")),
        selectInput(ns("reference_dataset"), "Reference dataset",
-                   c("H9 v0 (2018)" = "h9_v0",
-                     "H9 v1 (2020)" = "h9_v1"
-                     # "RC v0 (2020)" = "rc17_v0"
+                   # key-value for selecting ref data
+                   # the value must match the keys used in load_all_reference_data()
+                   c("H9 v0 (2018)" = "h9_v0_2018",
+                     "H9 v0 (2020)" = "h9_v0_2020",
+                     "H9 v1 (2020)" = "h9_v1_2020",
+                     "RC v1 (2020)" = "rc17_v1_2020"
                      ),
-                   selected="h9_v1"),
+                   selected="h9_v1_2020"),
      ),
      
      
@@ -169,11 +172,13 @@ serverQPCR <- function(id) {
               reference_data=values$data_reference_delta_ct)
             values$dt_list <- make_datatables_ct(values$plates$raw)
             updateTabsetPanel(session, "tabset", selected="panel_ct")},
-            warning = function(warn){showNotification(paste0(warn),
+            warning = function(warn){print(warn)
+                                  showNotification(paste0(warn),
                                                       duration=0,
-                                                      cluseButton=TRUE,
+                                                      closeButton=TRUE,
                                                       type="warning")},
-            error = function(err){showNotification(paste0(err),
+            error = function(err){print(err)
+                                  showNotification(paste0(err),
                                                     duration=0,
                                                     closeButton=TRUE,
                                                     type="err")}

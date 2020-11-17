@@ -12,9 +12,10 @@ ceiling_to_multiple <- function(number, multiple) {
 load_all_reference_data <- function() {
   # return results in list
   dsets <- list()
-  dsets[[ "h9_v0" ]] <- read.csv("data/h9_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
-  dsets[[ "h9_v1" ]] <- read.csv("data/h9_v1.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
-  dsets[[ "rc17_v0" ]] <- read.csv("data/rc17_v0.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  dsets[[ "h9_v0_2018" ]] <- read.csv("data/h9_v0_2018.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  dsets[[ "h9_v0_2020" ]] <- read.csv("data/h9_v0_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  dsets[[ "h9_v1_2020" ]] <- read.csv("data/h9_v1_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
+  dsets[[ "rc17_v1_2020" ]] <- read.csv("data/rc17_v1_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   return(dsets)
 }
 
@@ -26,6 +27,7 @@ process_reference_data <- function(data_raw, hk_genes) {
     hkg_list <- list()
     for (g in hk_genes) {
         # TODO: investigate any side-effect, i.e. is the right hk gene chosen first?
+        # TODO: ask Pedro if we should compute mean or just take first value
         v <- data_raw[data_raw$gene == g,]$ct[1] # get first ct value as ref
         hkg_list[[ g ]] <- v # store ct value
     }
@@ -37,9 +39,9 @@ process_reference_data <- function(data_raw, hk_genes) {
         v <- hkg_list[[ g ]] # get housekeeping ct value
         
         data <- data %>%
-            mutate(ct=ct - v) %>%
-            group_by(gene) %>%
-            summarise(avg.delta.ct=mean(ct), .groups="drop")
+            mutate(ct=ct - v) %>% # subtract avg of hk gene
+            group_by(gene) %>%    # group by gene
+            summarise(avg.delta.ct=mean(ct), .groups="drop") # compute mean
         
         delta_list[[ g ]] <- data
     }
@@ -226,7 +228,7 @@ process_plates <- function(files, col_names, row_names, reference_data, replicat
   
   
   # -- read files and compute qc -----------------------------------------------
-
+  
   # iterate over files and process them
   n_plates_x <- as.integer(length(col_labels) / 24)
   n_plates_y <- as.integer(length(row_labels) / 16)
@@ -244,6 +246,7 @@ process_plates <- function(files, col_names, row_names, reference_data, replicat
 
           df <- plates[[px]]$df
           if (replicates_in_cols) {
+              # if transposing, doesn't go here
               df <- as.data.frame(t(df))
               colnames(df) <- plate_rows
           } else {
@@ -252,20 +255,26 @@ process_plates <- function(files, col_names, row_names, reference_data, replicat
 
           df_col[[j]] <- df
       }
-      df_row[[i]] <- do.call(cbind, df_col)
+      if (replicates_in_cols) {
+        df_row[[i]] <- do.call(rbind, df_col)
+      } else {
+        df_row[[i]] <- do.call(cbind, df_col)
+      }
+      
   }
-
-  df <- do.call(rbind, df_row)
 
   # transpose df if needed
   if (replicates_in_cols) {
+    df <- do.call(cbind, df_row)
+    # for some reason the plate is built in the wrong direction
     # transpose df, and add replicates as new col: "sample"
     # R can only groupby based on column values - not column names
     df <- cbind(df, sample=col_labels) # add sample column with labels for group by
   } else {
+    df <- do.call(rbind, df_row)
     df <- cbind(df, sample=row_labels)
   }
-
+  
   # preserve input row order
   sample_order <- unique(df$sample)
   df$sample <- factor(df$sample, levels = sample_order)
