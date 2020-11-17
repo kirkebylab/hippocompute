@@ -161,7 +161,13 @@ calculate_fold_change <- function(df, reference_data) {
 
   power_acc <- NULL
   for (g in house_keeping_genes) {
+    # check that hk gene is in colnames
+    if (! (g %in% colnames(df))) {
+      stop(paste("Housekeeping gene ", g, " not found. Check selected housekeeping genes."))
+    }
+    
     delta_sample <- data.frame(df, check.names=FALSE) # check.names prevents R changing '-' to '.'
+    
     v <- delta_sample[,g] # get housekeeping gene ct vector
     delta_sample <- delta_sample - v # subtract houskeeping across data
     
@@ -279,6 +285,10 @@ process_plates <- function(files, col_names, row_names, reference_data, replicat
 make_datatables_ct <- function(plates) {
   # process a list of plates (16x24 raw ct values)
   # each plate has masks that are used to apply coloring to the datatable
+  if (length(plates) <= 0) {
+    stop(paste("No plates to make datatables from."))
+  }
+  
   dt_list <- list()
   for (i in 1:length(plates)) {
       name_obj <- paste0("plate_", i)

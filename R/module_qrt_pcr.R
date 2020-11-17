@@ -21,13 +21,24 @@ uiQPCR <- function(id, label = "qpcr") {
     sidebarLayout(
      # input
      sidebarPanel(
-       textInput(ns("col_labels"), label = "Column labels", value = "", placeholder = "Paste column labels ..."),
-       span(h6(textOutput(ns("col_label_count"))), style="color:gray"),
-       textInput(ns("row_labels"), label = "Row labels", value = "", placeholder = "Paste row labels ..."),
-       span(h6(textOutput(ns("row_label_count"))), style="color:gray"),
-       fileInput(ns("files"), label = "File input", multiple=TRUE, placeholder = "No file selected"),
-       span(h6(textOutput(ns("file_count"))), style="color:gray"),
+       # input fields
+       h6(textOutput(ns("col_label_count"))),
+       textInput(ns("col_labels"), label = NULL, value = "", placeholder = "Paste column labels ..."),
+       h6(textOutput(ns("row_label_count"))),
+       textInput(ns("row_labels"), label = NULL, value = "", placeholder = "Paste row labels ..."),
+       h6(textOutput(ns("file_count"))),
+       fileInput(ns("files"), label = NULL, multiple=TRUE, placeholder = "No file selected"),
+
+       # buttons
+       fluidRow(
+           column(12, align="center", actionButton(ns("button_calculate"), "Calculate",
+                                                   class="btn-primary")),
+       # actionButton(ns("button_clear_input"), "Clear"),
+       ),
+
        hr(),
+
+       # settings
        selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
                       # selected = c("ACTB", "GAPDH"), # handled by server
                       choices = NULL, # handled by server
@@ -39,29 +50,24 @@ uiQPCR <- function(id, label = "qpcr") {
                      # "RC v0 (2020)" = "rc17_v0"
                      ),
                    selected="h9_v1"),
-       div(actionButton(ns("button_calculate"), "Calculate", style="align:center")),
-       # actionButton(ns("button_clear_input"), "Clear"),
      ),
      
      
      # output
      mainPanel(
-       tabsetPanel(
-         tabPanel("Fold Change", br(), dataTableOutput(ns("plate_fold_change"))),
-         tabPanel("Ct", br(), uiOutput(ns("plates"))),
-         tabPanel("Reference", br(), dataTableOutput(ns("reference"))),
-         tabPanel("Log",
-            # show / hide this area
-            # https://stackoverflow.com/questions/44790028/show-hide-entire-box-element-in-r-shiny
-            # https://stackoverflow.com/questions/51333133/using-shinyjs-to-hide-show-ui-elements
-            br(),
-            h3("Column labels"),
-            verbatimTextOutput(ns("col_labels")),
-            h3("Row labels"),
-            verbatimTextOutput(ns("row_labels")),
-            h3("File input"),
-            verbatimTextOutput(ns("files"))
-         )
+       tabsetPanel(id=ns("tabset"), selected="panel_input",
+        tabPanel("Input", value="panel_input",
+                br(),
+                h3("Column labels"),
+                verbatimTextOutput(ns("col_labels")),
+                h3("Row labels"),
+                verbatimTextOutput(ns("row_labels")),
+                h3("File input"),
+                verbatimTextOutput(ns("files"))
+                ),
+         tabPanel("Ct", value="panel_ct", br(), uiOutput(ns("plates"))),
+         tabPanel("Fold Change", value="panel_fc", br(), dataTableOutput(ns("plate_fold_change"))),
+         tabPanel("Reference", value="panel_ref", br(), dataTableOutput(ns("reference")))
        ),
      )
     )
@@ -160,19 +166,9 @@ serverQPCR <- function(id) {
               files=input$files,
               col_names=input$col_labels,
               row_names=input$row_labels,
-              reference_data=values$data_reference_delta_ct)},
-            warning = function(warn){showNotification(paste0(warn),
-                                                      duration=0,
-                                                      cluseButton=TRUE,
-                                                      type="warning")},
-            error = function(err){showNotification(paste0(err),
-                                                    duration=0,
-                                                    closeButton=TRUE,
-                                                    type="err")}
-        )
-
-        tryCatch({
-            values$dt_list <- make_datatables_ct(values$plates$raw)},
+              reference_data=values$data_reference_delta_ct)
+            values$dt_list <- make_datatables_ct(values$plates$raw)
+            updateTabsetPanel(session, "tabset", selected="panel_ct")},
             warning = function(warn){showNotification(paste0(warn),
                                                       duration=0,
                                                       cluseButton=TRUE,
@@ -192,7 +188,7 @@ serverQPCR <- function(id) {
       output$col_label_count <- renderText({
           count <- length(values$col_labels)
           expected <- ceiling_to_multiple(count-1, 24)
-          return(paste0(count, "/", expected, " labels"))
+          return(paste0("Column labels ", count, "/", expected))
       })
 
       # Number of row labels vs expected
@@ -200,7 +196,7 @@ serverQPCR <- function(id) {
       output$row_label_count <- renderText({
           count <- length(values$row_labels)
           expected <- ceiling_to_multiple(count-1, 16)
-          return(paste0(count, "/", expected, " labels"))
+          return(paste0("Row labels ", count, "/", expected))
       })
 
       # Number of files vs expected
@@ -214,7 +210,7 @@ serverQPCR <- function(id) {
           expected_y <- ceiling_to_multiple(count_rows-1, 16)
           # n plates fit in x-axis * n plates fit in y-axis
           expected <- (expected_x / 24) * (expected_y / 16)
-          return(paste0(count_files, "/", expected, " files"))
+          return(paste0("Files ", count_files, "/", expected))
       })
       
       # Tab - Fold change
