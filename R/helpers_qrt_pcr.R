@@ -105,22 +105,24 @@ read_file <- function(name, file, col_labels, row_labels, replicates_in_cols=NUL
   }
   
   # compute standard deviation per replicate
-  mask_std <- df %>%
-   dplyr::group_by(sample) %>%
-   dplyr::transmute(dplyr::across(.fns=sd, na.rm=TRUE)) %>%
-   as.data.frame()
-
-  mask_std <- mask_std[,-1] # drop sample col
+  mask_absdiff <- df %>%
+    dplyr::group_by(sample) %>%
+    dplyr::transmute(dplyr::across(.fns=mean, na.rm=TRUE)) %>%
+    as.data.frame()
+  
+  mask_absdiff <- mask_absdiff[,-1] # drop sample col
+  mask_absdiff <- abs(mask_absdiff - df[,-dim(df)[2]])
+  mask_absdiff <- mask_absdiff >= .5
   
   # transpose to shape 24x16 if necessary
   if (replicates_in_cols) {
-    mask_std <- t(mask_std)
+    mask_absdiff <- t(mask_absdiff)
   }
   
   # For 2 samples. a SD of .3 is equivalent to a difference from the mean of .5,
   # which works with 2 samples, but not 3
   # TODO: calculate threshold depending on number of replicates. Discuss with AK.
-  mask_std <- (mask_std > .5)
+  mask_absdiff <- (mask_absdiff > .5)
 
   # return results in list
   results <- list()
@@ -128,7 +130,7 @@ read_file <- function(name, file, col_labels, row_labels, replicates_in_cols=NUL
   results[[ "df" ]] <- df_raw
   results[[ "mask_zeros" ]] <- mask_zeros
   results[[ "mask_nas" ]] <- mask_nas
-  results[[ "mask_std" ]] <- mask_std
+  results[[ "mask_absdiff" ]] <- mask_absdiff
   return(results)
 }
 
@@ -305,7 +307,7 @@ make_datatables_ct <- function(plates) {
 
       df <- p$df
       mask <- matrix(0L, nrow = dim(df)[1], ncol = dim(df)[2])
-      mask[p$mask_std] <- 1
+      mask[p$mask_absdiff] <- 1
       mask[p$mask_zeros] <- 2
       mask[p$mask_nas] <- 3
 
