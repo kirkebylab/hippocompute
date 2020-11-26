@@ -15,7 +15,6 @@ load_all_reference_data <- function() {
   dsets[[ "h9_v0_2018" ]] <- read.csv("data/h9_v0_2018.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   dsets[[ "h9_v0_2020" ]] <- read.csv("data/h9_v0_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   dsets[[ "h9_v1_2020" ]] <- read.csv("data/h9_v1_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
-  # dsets[[ "h9-rc17_v1_2020" ]] <- read.csv("data/h9-rc17_v1_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   dsets[[ "rc17_v1_2020" ]] <- read.csv("data/rc17_v1_2020.tsv", header=TRUE, sep='\t', stringsAsFactors=FALSE)
   dsets[[ "h9-rc17_v1_2020" ]] <- rbind(dsets[[ "h9_v1_2020" ]], dsets[[ "rc17_v1_2020" ]])
   return(dsets)
@@ -30,7 +29,7 @@ process_reference_data <- function(data_raw, hk_genes) {
     for (g in hk_genes) {
         # TODO: investigate any side-effect, i.e. is the right hk gene chosen first?
         # TODO: ask Pedro if we should compute mean or just take first value
-        v <- data_raw[data_raw$gene == g,]$ct[1] # get first ct value as ref
+        v <- data_raw[data_raw$gene == g,]$ct[1] # TODO: get first ct value as ref or avg?
         hkg_list[[ g ]] <- v # store ct value
     }
     
