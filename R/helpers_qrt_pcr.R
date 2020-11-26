@@ -23,13 +23,11 @@ load_all_reference_data <- function() {
 
 process_reference_data <- function(data_raw, hk_genes) {
     # load h9 reference values
-    
+    # TODO: refactor this function - 2x loops not needed + update names c.f. article
     # extract h9 housekeeping genes and reference ct values
     hkg_list <- list()
     for (g in hk_genes) {
-        # TODO: investigate any side-effect, i.e. is the right hk gene chosen first?
-        # TODO: ask Pedro if we should compute mean or just take first value
-        v <- data_raw[data_raw$gene == g,]$ct[1] # TODO: get first ct value as ref or avg?
+        v <- mean(data_raw[data_raw$gene == g,]$ct)
         hkg_list[[ g ]] <- v # store ct value
     }
     
@@ -113,7 +111,7 @@ read_file <- function(name, file, col_labels, row_labels, replicates_in_cols=NUL
   
   mask_absdiff <- mask_absdiff[,-1] # drop sample col
   mask_absdiff <- abs(mask_absdiff - df[,-dim(df)[2]])
-  mask_absdiff <- mask_absdiff >= .5
+  mask_absdiff <- mask_absdiff >= .5 # TODO: evaluate threshold
   
   # transpose to shape 24x16 if necessary
   if (replicates_in_cols) {
