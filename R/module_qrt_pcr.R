@@ -9,7 +9,7 @@ library(tidyr)
 # Setup ----
 # delta_h9_list <- load_reference() # from helpers_qrt_pcr.R
 data_reference <- load_all_reference_data() # from helpers_qrt_pcr.R
-hk_genes_default <- c("ACTB", "GAPDH")
+hk_genes_default <- c("ACTB_v2", "GAPDH")
 
 # UI logic ----
 uiQPCR <- function(id, label = "qpcr") {
@@ -47,9 +47,7 @@ uiQPCR <- function(id, label = "qpcr") {
        selectInput(ns("reference_dataset"), "Reference dataset",
                    # key-value for selecting ref data
                    # the value must match the keys used in load_all_reference_data()
-                   c("H9 v0 (2018)" = "h9_v0_2018",
-                     "H9 v0 (2020)" = "h9_v0_2020",
-                     "H9 v1 (2020)" = "h9_v1_2020",
+                   c("H9 v1 (2020)" = "h9_v1_2020",
                      "H9-RC17-avg v1 (2020)" = "h9-rc17_v1_2020",
                      "RC v1 (2020)" = "rc17_v1_2020"
                      ),
