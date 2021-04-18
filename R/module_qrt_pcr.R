@@ -254,7 +254,7 @@ serverQPCR <- function(id) {
         df_org <- values$data_reference_raw
 
         df <- datatable(
-          data=df_org,
+          data=df_org[order(df_org$gene),], # sort by gene name
           extensions=c("Buttons"),
           options=list(
             dom = 'Bfrtip',
