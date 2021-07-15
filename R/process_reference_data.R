@@ -3,6 +3,8 @@ process_reference_data <- function(data_raw, hk_genes) {
   # load h9 reference values
   # TODO: refactor this function - 2x loops not needed + update names c.f. article
   # extract h9 housekeeping genes and reference ct values
+  print(paste("Processing reference data with hk genes:",
+              paste(hk_genes, collapse = " ")))
   hkg_list <- list()
   for (g in hk_genes) {
     v <- mean(data_raw[data_raw$gene == g,]$ct)
@@ -19,10 +21,10 @@ process_reference_data <- function(data_raw, hk_genes) {
       mutate(ct=ct - v) %>% # subtract avg of hk gene
       group_by(gene) %>%    # group by gene
       summarise(avg.delta.ct=mean(ct), .groups="drop") # compute mean
-    
     delta_list[[ g ]] <- data
   }
   
+  print(delta_list)
   return(delta_list)
 }
 

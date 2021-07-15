@@ -4,6 +4,8 @@ calculate_fold_change <- function(df, reference_data) {
   # then add col_labels and row_labels
   # add replicate_name (sample) column
   # do the computation as usual
+  print("Calculating fold change ...")
+  print(head(reference_data))
   
   # ensure colnames are unique
   if (any(duplicated(colnames(df)))) {
@@ -19,17 +21,21 @@ calculate_fold_change <- function(df, reference_data) {
   df <- df[,-1] # drop sample col
   # check that primers are in cols and samples in rows
   if (any(rownames(df) %in% reference_data[[ 1 ]]$gene)) {
+    print("Transposing dataframe to have primers in cols")
     df <- as.data.frame(t(df)) # transpose table
   }
+  print(head(df))
   
   # compute deltas
   # for each house-keeping primer in data: compute delta for all samples
   # i.e. delta = sample1_primer1 - sample1_ACTB
   house_keeping_genes <- names(reference_data) # get names from list of df's
   
+  print("Calculating power for each housekeeping gene")
   power_acc <- NULL
   for (g in house_keeping_genes) {
     # check that hk gene is in colnames
+    print(g)
     if (! (g %in% colnames(df))) {
       stop(paste("Housekeeping gene ", g, " not found. Check selected housekeeping genes."))
     }

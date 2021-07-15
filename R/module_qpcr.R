@@ -47,7 +47,8 @@ uiQPCR <- function(id, label = "qpcr") {
        selectInput(ns("reference_dataset"), "Reference dataset",
                    # key-value for selecting ref data
                    # the value must match the keys used in load_all_reference_data()
-                   c("H9 v1 (2020)" = "h9_v1_2020",
+                   c("H9 v0 (2020)" = "h9_v0_2020",
+                     "H9 v1 (2020)" = "h9_v1_2020",
                      "H9-RC17-avg v1 (2020)" = "h9-rc17_v1_2020",
                      "RC v1 (2020)" = "rc17_v1_2020"
                      ),
@@ -112,6 +113,8 @@ serverQPCR <- function(id) {
       genes_housekeeping_d <- genes_housekeeping %>% debounce(2000) 
       observeEvent(genes_housekeeping_d(), {
             # TODO: handle case where none are selected
+            print(paste("HK genes changed:",
+                        paste(genes_housekeeping_d(), collapse = ' ')))
             # update selected hk genes
             values$hk_genes_selected <- genes_housekeeping_d()
 

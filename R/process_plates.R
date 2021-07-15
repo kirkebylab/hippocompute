@@ -5,6 +5,12 @@ process_plates <- function(files, col_names, row_names, reference_data, replicat
   # 'size', 'type', and 'datapath' columns. The 'datapath'
   # column will contain the local filenames where the data can
   # be found.
+  print("process_plates()")
+  print(files)
+  print(col_names)
+  print(row_names)
+  print(head(reference_data))
+  print(replicates_in_cols)
   
   # -- check input ------------------------------------------------------------
   if (is.null(files))
