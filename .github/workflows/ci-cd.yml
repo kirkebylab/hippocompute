@@ -1,4 +1,4 @@
-# Author: Mirai Solutions
+# Original Author: Mirai Solutions
 # https://github.com/miraisolutions/ShinyCICD
 # Original license of 'ShinyCICD' applies to this file (GNU LGPL v2.1)
 
@@ -29,10 +29,10 @@ jobs:
 
     steps:
 
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Setup R
+      - name: Setup R on VM
         uses: r-lib/actions/setup-r@v1
         with:
           r-version: ${{ matrix.config.r }}
@@ -66,12 +66,12 @@ jobs:
       - name: Check package
         run: |
           options(crayon.enabled = TRUE) # enable colorful R CMD check output
-          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "warning")
+          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
         shell: Rscript {0}
 
       - name: Deploy to shinyapps.io
         # continuous deployment only for pushes to the main / master branch
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
           SHINYAPPS_ACCOUNT: ${{ secrets.SHINYAPPS_ACCOUNT }}
           SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
