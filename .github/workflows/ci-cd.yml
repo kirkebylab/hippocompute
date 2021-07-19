@@ -2,8 +2,8 @@
 # https://github.com/miraisolutions/ShinyCICD
 # Original license of 'ShinyCICD' applies to this file (GNU LGPL v2.1)
 
-# Triggered on push and pull request events
-on: [push, pull_request]
+# Events to trigger on
+on: [push]
 
 # Name of the workflow => usethis::use_github_actions_badge("CI-CD")
 name: CI-CD
