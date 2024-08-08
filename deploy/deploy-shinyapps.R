@@ -9,5 +9,8 @@ rsconnect::setAccountInfo(
 rsconnect::deployApp(
   appName = "hippocompute",
   # exclude hidden files and renv directory (if present)
-  appFiles = setdiff(list.files(), "renv")
+  appFiles = setdiff(list.files(), "renv"),
+  
+  #update 240808: force updates to avoid issues with deprecation, as had happened now (Alrik) 
+  forceUpdate = TRUE # Add this line to force update the existing app
 )
