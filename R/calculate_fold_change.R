@@ -15,7 +15,11 @@ calculate_fold_change <- function(df, reference_data) {
   # compute average Ct intensity per replicate
   df <- df %>%
     group_by(sample) %>% 
-    summarise(across(.fns=mean, na.rm=TRUE), .groups="drop") %>%
+    
+    #alrik changes 240813
+    #summarise(across(.fns=mean, na.rm=TRUE), .groups="drop") %>% #original code, deprecated in dplyr 1.0.0
+    summarise(across(.cols = everything(), .fns = mean, na.rm = TRUE), .groups = "drop") %>% #updated code
+  
     as.data.frame()
   rownames(df) <- df[,"sample"]
   df <- df[,-1] # drop sample col
