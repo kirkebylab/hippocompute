@@ -18,7 +18,7 @@ calculate_fold_change <- function(df, reference_data) {
     
     #alrik changes 240813
     #summarise(across(.fns=mean, na.rm=TRUE), .groups="drop") %>% #original code, deprecated in dplyr 1.0.0
-    summarise(across(.cols = everything(), .fns = mean, na.rm = TRUE), .groups = "drop") %>% #updated code
+    summarise(across(.cols = everything(), .fns = \(x) mean(x, na.rm = TRUE)), .groups = "drop") %>% #updated code
   
     as.data.frame()
   rownames(df) <- df[,"sample"]

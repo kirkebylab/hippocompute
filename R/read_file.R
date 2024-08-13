@@ -59,7 +59,7 @@ read_file <- function(name, file, col_labels, row_labels, replicates_in_cols=NUL
     
     #alrik changes 240813
     #dplyr::transmute(dplyr::across(.fns=mean, na.rm=TRUE)) %>% #original code, deprecated in dplyr 1.0.0
-    dplyr::transmute(dplyr::across(.cols = everything(), .fns = mean, na.rm = TRUE)) %>% #updated code
+    dplyr::transmute(across(.cols = everything(), .fns = \(x) mean(x, na.rm = TRUE))) #updated code
   
     as.data.frame()
   
