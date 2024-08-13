@@ -21,6 +21,7 @@ calculate_fold_change <- function(df, reference_data) {
     summarise(across(.cols = everything(), .fns = \(x) mean(x, na.rm = TRUE)), .groups = "drop") %>% #updated code
   
     as.data.frame()
+  
   rownames(df) <- df[,"sample"]
   df <- df[,-1] # drop sample col
   # check that primers are in cols and samples in rows
