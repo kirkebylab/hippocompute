@@ -1046,42 +1046,171 @@ S100b	28.21	2024/02/21	AS	RC17	Alrik edits for Danai
 S100b	27.75	2024/02/21	AS	RC17	Alrik edits for Danai
 XPO7_3	22.92	2024/08/07	AS	RC17	Alrik edits for Ugne
 XPO7_3	22.77	2024/08/07	AS	RC17	Alrik edits for Ugne
-SOX2-OT	26.26	AHO	RC17	Alrik edits for Amalie
-SOX2-OT	25.21	AHO	RC17	Alrik edits for Amalie
-SOX2-OT_v2	26.01	AHO	RC17	Alrik edits for Amalie
-SOX2-OT_v2	25.06	AHO	RC17	Alrik edits for Amalie
-SHISA2	23.92	AHO	RC17	Alrik edits for Amalie
-SHISA2	25.67	AHO	RC17	Alrik edits for Amalie
-SHISA2_v2	25.18	AHO	RC17	Alrik edits for Amalie
-SHISA2_v2	27.01	AHO	RC17	Alrik edits for Amalie
-SMO	23.88	AHO	RC17	Alrik edits for Amalie
-SMO	24.50	AHO	RC17	Alrik edits for Amalie
-SMO_v2	23.68	AHO	RC17	Alrik edits for Amalie
-SMO_v2	24.35	AHO	RC17	Alrik edits for Amalie
-HESX1	24.09	AHO	RC17	Alrik edits for Amalie
-HESX1	24.03	AHO	RC17	Alrik edits for Amalie
-HESX1_v2	24.08	AHO	RC17	Alrik edits for Amalie
-HESX1_v2	24.04	AHO	RC17	Alrik edits for Amalie
-ZIC3	23.40	AHO	RC17	Alrik edits for Amalie
-ZIC3	23.79	AHO	RC17	Alrik edits for Amalie
-ZIC3_v2	21.81	AHO	RC17	Alrik edits for Amalie
-ZIC3_v2	22.47	AHO	RC17	Alrik edits for Amalie
-FGFBP3	23.12	AHO	RC17	Alrik edits for Amalie
-FGFBP3	23.86	AHO	RC17	Alrik edits for Amalie
-FGFBP3_v2	24.19	AHO	RC17	Alrik edits for Amalie
-FGFBP3_v2	25.13	AHO	RC17	Alrik edits for Amalie
-SFRP1A	20.82	AHO	RC17	Alrik edits for Amalie
-SFRP1A	21.98	AHO	RC17	Alrik edits for Amalie
-SFRP1A_v2	19.12	AHO	RC17	Alrik edits for Amalie
-SFRP1A_v2	20.28	AHO	RC17	Alrik edits for Amalie
-SFRP5	27.78	AHO	RC17	Alrik edits for Amalie
-SFRP5	26.72	AHO	RC17	Alrik edits for Amalie
-SFRP5_v2	28.11	AHO	RC17	Alrik edits for Amalie
-SFRP5_v2	26.80	AHO	RC17	Alrik edits for Amalie
-EEF1G	18.05	AHO	RC17	Alrik edits for Amalie
-EEF1G	18.48	AHO	RC17	Alrik edits for Amalie
-EEF1G_v2	18.85	AHO	RC17	Alrik edits for Amalie
-EEF1G_v2	19.08	AHO	RC17	Alrik edits for Amalie
-ALDH1A1	28.82	AHO	RC17	Alrik edits for Amalie
-ALDH1A1	29.14	AHO	RC17	Alrik edits for Amalie
-ALDH1A1	28.92	AHO	RC17	Alrik edits for Amalie
+SOX2-OT	26.26	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SOX2-OT	25.21	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SOX2-OT_v2	26.01	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SOX2-OT_v2	25.06	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SHISA2	23.92	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SHISA2	25.67	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SHISA2_v2	25.18	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SHISA2_v2	27.01	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SMO	23.88	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SMO	24.5	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SMO_v2	23.68	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SMO_v2	24.35	2024/09/19	AHO	RC17	Alrik edits for Amalie
+HESX1	24.09	2024/09/19	AHO	RC17	Alrik edits for Amalie
+HESX1	24.03	2024/09/19	AHO	RC17	Alrik edits for Amalie
+HESX1_v2	24.08	2024/09/19	AHO	RC17	Alrik edits for Amalie
+HESX1_v2	24.04	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ZIC3	23.4	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ZIC3	23.79	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ZIC3_v2	21.81	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ZIC3_v2	22.47	2024/09/19	AHO	RC17	Alrik edits for Amalie
+FGFBP3	23.12	2024/09/19	AHO	RC17	Alrik edits for Amalie
+FGFBP3	23.86	2024/09/19	AHO	RC17	Alrik edits for Amalie
+FGFBP3_v2	24.19	2024/09/19	AHO	RC17	Alrik edits for Amalie
+FGFBP3_v2	25.13	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP1A	20.82	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP1A	21.98	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP1A_v2	19.12	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP1A_v2	20.28	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP5	27.78	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP5	26.72	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP5_v2	28.11	2024/09/19	AHO	RC17	Alrik edits for Amalie
+SFRP5_v2	26.8	2024/09/19	AHO	RC17	Alrik edits for Amalie
+EEF1G	18.05	2024/09/19	AHO	RC17	Alrik edits for Amalie
+EEF1G	18.48	2024/09/19	AHO	RC17	Alrik edits for Amalie
+EEF1G_v2	18.85	2024/09/19	AHO	RC17	Alrik edits for Amalie
+EEF1G_v2	19.08	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ALDH1A1	28.82	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ALDH1A1	29.14	2024/09/19	AHO	RC17	Alrik edits for Amalie
+ALDH1A1	28.92	2024/09/19	AHO	RC17	Alrik edits for Amalie
+AIF1.IBA1	25.83	2024-11-14	PTTV	RC17	alrik edits for theo
+AIF1.IBA1	27.7	2024-11-14	PTTV	RC17	alrik edits for theo
+AIF1.IBA1	26.66	2024-11-14	PTTV	RC17	alrik edits for theo
+ALK.1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+ALK.1	34.46	2024-11-08	PTTV	RC17	alrik edits for theo
+ALK.1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+AP.1	26.485	2024-11-08	PTTV	RC17	alrik edits for theo
+AP.1	28.21	2024-11-08	PTTV	RC17	alrik edits for theo
+AP.1	27.8	2024-11-08	PTTV	RC17	alrik edits for theo
+BCL11B.CTIP2	25.965	2024-11-08	PTTV	RC17	alrik edits for theo
+BCL11B.CTIP2	26.71	2024-11-08	PTTV	RC17	alrik edits for theo
+BCL11B.CTIP2	26.395	2024-11-08	PTTV	RC17	alrik edits for theo
+BRN2(A)	35	2024-11-08	PTTV	RC17	alrik edits for theo
+BRN2(A)	35	2024-11-08	PTTV	RC17	alrik edits for theo
+BRN2(A)	35	2024-11-08	PTTV	RC17	alrik edits for theo
+CCR2	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CCR2	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CCR2	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CD45	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CD45	33.45	2024-11-14	PTTV	RC17	alrik edits for theo
+CD45	32.3	2024-11-14	PTTV	RC17	alrik edits for theo
+CD68	29.03	2024-11-14	PTTV	RC17	alrik edits for theo
+CD68	29.89	2024-11-14	PTTV	RC17	alrik edits for theo
+CD68	28.87	2024-11-14	PTTV	RC17	alrik edits for theo
+CDK6	24.745	2024-11-08	PTTV	RC17	alrik edits for theo
+CDK6	25.525	2024-11-08	PTTV	RC17	alrik edits for theo
+CDK6	25.095	2024-11-08	PTTV	RC17	alrik edits for theo
+CHRM1_v1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+CHRM1_v1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+CHRM1_v1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+CHRM4	34.355	2024-11-08	PTTV	RC17	alrik edits for theo
+CHRM4	32.16	2024-11-08	PTTV	RC17	alrik edits for theo
+CHRM4	33.695	2024-11-08	PTTV	RC17	alrik edits for theo
+CNTFR	27.65	2024-11-08	PTTV	RC17	alrik edits for theo
+CNTFR	29.485	2024-11-08	PTTV	RC17	alrik edits for theo
+CNTFR	27.985	2024-11-08	PTTV	RC17	alrik edits for theo
+CSF1R	33.865	2024-11-14	PTTV	RC17	alrik edits for theo
+CSF1R	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CSF1R	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CUX1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+CUX1	28.05	2024-11-08	PTTV	RC17	alrik edits for theo
+CUX1	27.66	2024-11-08	PTTV	RC17	alrik edits for theo
+CX3CR1	35	2024-11-14	PTTV	RC17	alrik edits for theo
+CX3CR1	32.42	2024-11-14	PTTV	RC17	alrik edits for theo
+CX3CR1	31.965	2024-11-14	PTTV	RC17	alrik edits for theo
+DLX1_v2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+DLX1_v2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+DLX1_v2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+DLX5_v2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+DLX5_v2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+DLX5_v2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+ERBB4	31.84	2024-11-08	PTTV	RC17	alrik edits for theo
+ERBB4	33.58	2024-11-08	PTTV	RC17	alrik edits for theo
+ERBB4	32.125	2024-11-08	PTTV	RC17	alrik edits for theo
+GRIN1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+GRIN1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+GRIN1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+GRIN2B	35	2024-11-08	PTTV	RC17	alrik edits for theo
+GRIN2B	35	2024-11-08	PTTV	RC17	alrik edits for theo
+GRIN2B	35	2024-11-08	PTTV	RC17	alrik edits for theo
+HES5	35	2024-11-08	PTTV	RC17	alrik edits for theo
+HES5	35	2024-11-08	PTTV	RC17	alrik edits for theo
+HES5	35	2024-11-08	PTTV	RC17	alrik edits for theo
+IGF1R_v2	27.725	2024-11-08	PTTV	RC17	alrik edits for theo
+IGF1R_v2	27.745	2024-11-08	PTTV	RC17	alrik edits for theo
+IGF1R_v2	27.88	2024-11-08	PTTV	RC17	alrik edits for theo
+IRF8	35	2024-11-14	PTTV	RC17	alrik edits for theo
+IRF8	29.53	2024-11-14	PTTV	RC17	alrik edits for theo
+IRF8	35	2024-11-14	PTTV	RC17	alrik edits for theo
+ITGAM.CD11b	35	2024-11-14	PTTV	RC17	alrik edits for theo
+ITGAM.CD11b	34.535	2024-11-14	PTTV	RC17	alrik edits for theo
+ITGAM.CD11b	32.34	2024-11-14	PTTV	RC17	alrik edits for theo
+MEF2C	27.77	2024-11-08	PTTV	RC17	alrik edits for theo
+MEF2C	28.95	2024-11-08	PTTV	RC17	alrik edits for theo
+MEF2C	28.705	2024-11-08	PTTV	RC17	alrik edits for theo
+MERTK	35	2024-11-14	PTTV	RC17	alrik edits for theo
+MERTK	27.075	2024-11-14	PTTV	RC17	alrik edits for theo
+MERTK	25.615	2024-11-14	PTTV	RC17	alrik edits for theo
+NOTCH1	29.825	2024-11-08	PTTV	RC17	alrik edits for theo
+NOTCH1	29.605	2024-11-08	PTTV	RC17	alrik edits for theo
+NOTCH1	29.91	2024-11-08	PTTV	RC17	alrik edits for theo
+Nestin	35	2024-11-08	PTTV	RC17	alrik edits for theo
+Nestin	30.36	2024-11-08	PTTV	RC17	alrik edits for theo
+Nestin	31.015	2024-11-08	PTTV	RC17	alrik edits for theo
+P2RY12	30.33	2024-11-14	PTTV	RC17	alrik edits for theo
+P2RY12	31.75	2024-11-14	PTTV	RC17	alrik edits for theo
+P2RY12	30.85	2024-11-14	PTTV	RC17	alrik edits for theo
+P75_v2	26.67	2024-11-08	PTTV	RC17	alrik edits for theo
+P75_v2	28.945	2024-11-08	PTTV	RC17	alrik edits for theo
+P75_v2	27.37	2024-11-08	PTTV	RC17	alrik edits for theo
+PDGFC	27.29	2024-11-14	PTTV	RC17	alrik edits for theo
+PDGFC	28.45	2024-11-14	PTTV	RC17	alrik edits for theo
+PDGFC	27.7	2024-11-14	PTTV	RC17	alrik edits for theo
+PU.1	34.445	2024-11-14	PTTV	RC17	alrik edits for theo
+PU.1	35	2024-11-14	PTTV	RC17	alrik edits for theo
+PU.1	35	2024-11-14	PTTV	RC17	alrik edits for theo
+PVALB_v2	29.07	2024-11-08	PTTV	RC17	alrik edits for theo
+PVALB_v2	30.345	2024-11-08	PTTV	RC17	alrik edits for theo
+PVALB_v2	30.29	2024-11-08	PTTV	RC17	alrik edits for theo
+SLC5a7	35	2024-11-08	PTTV	RC17	alrik edits for theo
+SLC5a7	35	2024-11-08	PTTV	RC17	alrik edits for theo
+SLC5a7	35	2024-11-08	PTTV	RC17	alrik edits for theo
+SLC5a8	34.025	2024-11-08	PTTV	RC17	alrik edits for theo
+SLC5a8	33.74	2024-11-08	PTTV	RC17	alrik edits for theo
+SLC5a8	34.105	2024-11-08	PTTV	RC17	alrik edits for theo
+SNAP25v2	30.765	2024-11-08	PTTV	RC17	alrik edits for theo
+SNAP25v2	31.41	2024-11-08	PTTV	RC17	alrik edits for theo
+SNAP25v2	31.275	2024-11-08	PTTV	RC17	alrik edits for theo
+TA1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+TA1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+TA1	35	2024-11-08	PTTV	RC17	alrik edits for theo
+TBR2	34.045	2024-11-08	PTTV	RC17	alrik edits for theo
+TBR2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+TBR2	34.41	2024-11-08	PTTV	RC17	alrik edits for theo
+TMEM119	30.13	2024-11-14	PTTV	RC17	alrik edits for theo
+TMEM119	31.27	2024-11-14	PTTV	RC17	alrik edits for theo
+TMEM119	30.835	2024-11-14	PTTV	RC17	alrik edits for theo
+TREM2	35	2024-11-14	PTTV	RC17	alrik edits for theo
+TREM2	35	2024-11-14	PTTV	RC17	alrik edits for theo
+TREM2	35	2024-11-14	PTTV	RC17	alrik edits for theo
+VSX2	30.655	2024-11-08	PTTV	RC17	alrik edits for theo
+VSX2	31.42	2024-11-08	PTTV	RC17	alrik edits for theo
+VSX2	31.045	2024-11-08	PTTV	RC17	alrik edits for theo
+ZEB2	35	2024-11-08	PTTV	RC17	alrik edits for theo
+ZEB2	34.06	2024-11-08	PTTV	RC17	alrik edits for theo
+ZEB2	33.895	2024-11-08	PTTV	RC17	alrik edits for theo
+c.MYC	35	2024-11-08	PTTV	RC17	alrik edits for theo
+c.MYC	35	2024-11-08	PTTV	RC17	alrik edits for theo
+c.MYC	35	2024-11-08	PTTV	RC17	alrik edits for theo
