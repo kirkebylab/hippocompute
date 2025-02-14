@@ -297,18 +297,33 @@ serverQPCR <- function(id) {
       })
 
 
-      # Debug info -- render input as text
+      #debug info -- render input as text
+      #col labels
       output$col_labels <- renderPrint({
-        col_labels <- strsplit(input$col_labels, split="\\s+")
-        return(col_labels)
+        if (is.null(input$col_labels) || input$col_labels == "") {
+          cat("No column labels entered.")
+        } else {
+          cat("Column labels:", input$col_labels)
+        }
       })
-      
+  
+      #row labels
       output$row_labels <- renderPrint({
-        row_labels <- strsplit(input$row_labels, split="\\s+")
-        return(row_labels)
+        if (is.null(input$row_labels) || input$row_labels == "") {
+          cat("No row labels entered.")
+        } else {
+          cat("Row labels:", input$row_labels)
+        }
       })
       
-      output$files <- renderPrint({ str(input$files) })
+      #files
+      output$files <- renderPrint({
+        if (is.null(input$files)) {
+          cat("No files uploaded.")
+        } else {
+          print(input$files$name)  # Show only filenames, not full structure
+        }
+      })
     }
   )
 }
