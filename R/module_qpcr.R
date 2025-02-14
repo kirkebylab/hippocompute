@@ -23,16 +23,25 @@ uiQPCR <- function(id, label = "qpcr") {
      sidebarPanel(
        # input fields
        h6(textOutput(ns("col_label_count"))),
-       textInput(ns("col_labels"), label = NULL, value = "", placeholder = "Paste column labels ..."),
+       textInput(ns("col_labels"), label = NULL, value = "", placeholder = "Paste column labels... (typically primers)"),
        h6(textOutput(ns("row_label_count"))),
-       textInput(ns("row_labels"), label = NULL, value = "", placeholder = "Paste row labels ..."),
+       textInput(ns("row_labels"), label = NULL, value = "", placeholder = "Paste row labels... (typically samples)"),
        h6(textOutput(ns("file_count"))),
        fileInput(ns("files"), label = NULL, multiple=TRUE, placeholder = "No file selected"),
 
        # buttons
        fluidRow(
-           column(12, align="center", actionButton(ns("button_calculate"), "Calculate",
-                                                   class="btn-primary")),
+           column(12, align="center", 
+                  #20240214 modified the calculate action button and added an eraser
+                  actionButton(ns("button_calculate"), 
+                               label = "Calculate", 
+                               icon = icon("calculator"), 
+                               class="btn-success btn-lg btn-custom"),
+                  
+                  actionButton(ns("button_clear_input"), 
+                               label = "Clear labels", 
+                               icon = icon("eraser"), 
+                               class="btn-danger btn-custom")),
        # actionButton(ns("button_clear_input"), "Clear"),
        ),
 
@@ -43,23 +52,30 @@ uiQPCR <- function(id, label = "qpcr") {
                       # selected = c("ACTB", "GAPDH"), # handled by server
                       choices = NULL, # handled by server
                       multiple = TRUE,
-                      options = list(placeholder = "Select houskeeping genes")),
-       selectInput(ns("reference_dataset"), "Reference dataset",
+                      options = list(placeholder = "Select housekeeping genes")),
+       selectInput(ns("reference_dataset"), "Reference datasets",
                    # key-value for selecting ref data
                    # the value must match the keys used in load_all_reference_data()
                    c("H9 v0 (2020)" = "h9_v0_2020",
                      "H9 v1 (2020)" = "h9_v1_2020",
                      "H9-RC17-avg v1 (2020)" = "h9-rc17_v1_2020",
-                     "RC v1 (2020)" = "rc17_v1_2020"
+                     "RC v1 (2020)" = "rc17_v1_2020",
+                     
+                     # 250212 added the kolf2-1_2025 ref dataset (alrik)
+                     "Kolf2-1 (2025)" = "kolf2-1_2025",
+                     
+                     # 250214 added the UKBI011_A2_2025 and UKBi011_A_184_E11 refs dataset (alrik)
+                     "UKBI011 A2 (2025)" = "UKBI011_A2_2025",
+                     "UKBi011 A 184 E11 (2025)" = "UKBi011_A_184_E11_2025"
                      ),
-                   selected="h9_v1_2020"),
+                   selected="kolf2-1_2025"),
      ),
      
      
      # output
      mainPanel(
        tabsetPanel(id=ns("tabset"), selected="panel_input",
-        tabPanel("Input", value="panel_input",
+                   tabPanel(icon("upload"), "Input data", value="panel_input",
                 br(),
                 h3("Column labels"),
                 verbatimTextOutput(ns("col_labels")),
@@ -68,9 +84,13 @@ uiQPCR <- function(id, label = "qpcr") {
                 h3("File input"),
                 verbatimTextOutput(ns("files"))
                 ),
-         tabPanel("Ct", value="panel_ct", br(), uiOutput(ns("plates"))),
-         tabPanel("Fold Change", value="panel_fc", br(), dataTableOutput(ns("plate_fold_change"))),
-         tabPanel("Reference", value="panel_ref", br(), dataTableOutput(ns("reference")))
+         #tabPanel("Ct", value="panel_ct", br(), uiOutput(ns("plates"))),
+         #tabPanel("Fold Change", value="panel_fc", br(), dataTableOutput(ns("plate_fold_change"))),
+         #tabPanel("Reference", value="panel_ref", br(), dataTableOutput(ns("reference")))
+         
+         tabPanel(icon("chart-line"), "Retrieved Ct values from .txt file", value="panel_ct", br(), uiOutput(ns("plates"))),
+         tabPanel(icon("chart-bar"), "Calculated fold changes", value="panel_fc", br(), dataTableOutput(ns("plate_fold_change"))),
+         tabPanel(icon("database"), "Reference Ct values", value="panel_ref", br(), dataTableOutput(ns("reference"))),
        ),
      )
     )
@@ -231,6 +251,10 @@ serverQPCR <- function(id) {
           options = list(
             dom = 'Bfrtip',
             pageLength=25,
+            
+            autoWidth = TRUE, #250114
+            class = 'cell-border stripe', #250114
+            
             buttons = list('copy',
                            'csv',
                            list(extend = 'excel', filename="hippocompute_qpcr_fc", title = NULL),
