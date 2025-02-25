@@ -17,7 +17,7 @@ uiQPCR <- function(id, label = "qpcr") {
   # invoke later.
   ns <- NS(id)
   
-  tabPanel("QPCR",
+  tabPanel("Process",
     sidebarLayout(
      # input
      sidebarPanel(
@@ -47,12 +47,7 @@ uiQPCR <- function(id, label = "qpcr") {
 
        hr(),
 
-       # settings
-       selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
-                      # selected = c("ACTB", "GAPDH"), # handled by server
-                      choices = NULL, # handled by server
-                      multiple = TRUE,
-                      options = list(placeholder = "Select housekeeping genes")),
+       
        selectInput(ns("reference_dataset"), "Reference datasets",
                    # key-value for selecting ref data
                    # the value must match the keys used in load_all_reference_data()
@@ -67,8 +62,20 @@ uiQPCR <- function(id, label = "qpcr") {
                      # 250214 added the UKBI011_A2_2025 and UKBi011_A_184_E11 refs dataset (alrik)
                      "UKBI011 A2 (2025)" = "UKBI011_A2_2025",
                      "UKBi011 A 184 E11 (2025)" = "UKBi011_A_184_E11_2025"
-                     ),
+                   ),
                    selected="kolf2-1_2025"),
+       
+       
+       # settings
+       selectizeInput(ns("genes_housekeeping"), label="Housekeeping genes",
+                      # selected = c("ACTB", "GAPDH"), # handled by server
+                      choices = NULL, # handled by server
+                      multiple = TRUE,
+                      options = list(placeholder = "Select housekeeping genes")),
+       
+       
+       
+
      ),
      
      

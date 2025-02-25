@@ -9,7 +9,7 @@ library(shiny)
 # delta_h9_list <- load_reference()
 
 # User interface ----
-ui <- navbarPage(htmlOutput("title"), windowTitle="Hippocompute",
+ui <- navbarPage(htmlOutput("title"), windowTitle="Hippocompute", 
     # load tabs
     uiQPCR("qpcr"),
     
@@ -63,7 +63,7 @@ ui <- navbarPage(htmlOutput("title"), windowTitle="Hippocompute",
 
 # Server logic ----
 server <- function(input, output, session) {
-  output$title <- renderText("Hippocompute<sup>BETA</sup>")
+  output$title <- renderText("Hippocompute")
   
     # load tabs
     serverQPCR("qpcr")
