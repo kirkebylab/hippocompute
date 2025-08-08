@@ -3,7 +3,7 @@ process_reference_data <- function(data_raw, hk_genes) {
   # load h9 reference values
   # TODO: refactor this function - 2x loops not needed + update names c.f. article
   # extract h9 housekeeping genes and reference ct values
-  print(paste("Processing reference data with hk genes:",
+  print(paste("Processing reference data with housekeeping genes:",
               paste(hk_genes, collapse = " ")))
   hkg_list <- list()
   for (g in hk_genes) {
